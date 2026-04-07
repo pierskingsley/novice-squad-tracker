@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Spinner from '../../components/ui/Spinner'
-import { ChevronDown, ChevronUp, Trophy, Calendar } from 'lucide-react'
+import { usePullToRefresh } from '../../hooks/usePullToRefresh'
+import { ChevronDown, ChevronUp, Trophy, Calendar, RotateCcw } from 'lucide-react'
 
 export default function History() {
   const { user } = useAuth()
@@ -10,11 +11,7 @@ export default function History() {
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState({})
 
-  useEffect(() => {
-    if (user) load()
-  }, [user])
-
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true)
     const { data, error } = await supabase
       .from('sessions')
@@ -36,7 +33,13 @@ export default function History() {
 
     if (!error) setSessions(data || [])
     setLoading(false)
-  }
+  }, [user])
+
+  useEffect(() => {
+    if (user) load()
+  }, [user])
+
+  const { pullDistance, refreshing, isTriggered, handlers: ptrHandlers } = usePullToRefresh(load)
 
   function toggle(id) {
     setExpanded(prev => ({ ...prev, [id]: !prev[id] }))
@@ -52,12 +55,20 @@ export default function History() {
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
   }
 
-  if (loading) {
+  if (loading && !refreshing) {
     return <div className="flex justify-center pt-20"><Spinner size="lg" /></div>
   }
 
   return (
-    <div className="px-4 pt-6">
+    <div {...ptrHandlers} className="px-4 pt-6">
+      {pullDistance > 0 && (
+        <div className="flex items-center justify-center overflow-hidden transition-all duration-150"
+          style={{ height: pullDistance, marginTop: -pullDistance, marginBottom: pullDistance }}>
+          <div className={`transition-all duration-150 ${isTriggered || refreshing ? 'text-vesta-red' : 'text-slate-300'}`}>
+            {refreshing ? <Spinner size="sm" /> : <RotateCcw size={18} className={isTriggered ? 'rotate-180' : ''} />}
+          </div>
+        </div>
+      )}
       <h1 className="text-2xl font-bold text-slate-900 mb-5">History</h1>
 
       {sessions.length === 0 ? (

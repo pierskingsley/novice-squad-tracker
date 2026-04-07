@@ -5,7 +5,10 @@ import { useAuth } from '../../context/AuthContext'
 import { TODAY } from '../../lib/constants'
 import Spinner from '../../components/ui/Spinner'
 import Modal from '../../components/ui/Modal'
-import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, Zap, Pencil, CalendarPlus, Trash2, Download, Share, X } from 'lucide-react'
+import SwipeToDelete from '../../components/ui/SwipeToDelete'
+import { useToast } from '../../context/ToastContext'
+import { usePullToRefresh } from '../../hooks/usePullToRefresh'
+import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, Zap, Pencil, CalendarPlus, Trash2, Share, X, Download, RotateCcw } from 'lucide-react'
 
 function PastSessionsList({ sessions, onEdit, onAddDate, addingDate }) {
   const [pickedDate, setPickedDate] = useState('')
@@ -48,10 +51,7 @@ function PastSessionsList({ sessions, onEdit, onAddDate, addingDate }) {
                   {sess.total_tonnage > 0 && ` · ${sess.total_tonnage}kg`}
                 </div>
               </div>
-              <button
-                onClick={() => onEdit(sess.id)}
-                className="ml-3 flex items-center gap-1.5 text-xs text-vesta-red font-medium flex-shrink-0"
-              >
+              <button onClick={() => onEdit(sess.id)} className="ml-3 flex items-center gap-1.5 text-xs text-vesta-red font-medium flex-shrink-0">
                 <Pencil size={13} /> Edit
               </button>
             </div>
@@ -62,26 +62,19 @@ function PastSessionsList({ sessions, onEdit, onAddDate, addingDate }) {
   )
 }
 
-const CATEGORY_LABELS = { compound: 'Compounds', accessory: 'Accessory', core: 'Core' }
-const CATEGORY_ORDER = ['compound', 'accessory', 'core']
-
 function ExercisePicker({ exercises, onSelect, adding }) {
   const [activeCategory, setActiveCategory] = useState(null)
-  const categories = CATEGORY_ORDER.filter(c => exercises.some(e => e.category === c))
+  const categories = [...new Set(exercises.map(e => e.category).filter(Boolean))]
   const filtered = activeCategory ? exercises.filter(e => e.category === activeCategory) : exercises
 
   return (
     <div>
       <div className="flex gap-2 overflow-x-auto pb-1 mb-3 -mx-1 px-1">
-        <button
-          onClick={() => setActiveCategory(null)}
-          className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${!activeCategory ? 'bg-vesta-red text-white' : 'bg-slate-100 text-slate-500'}`}
-        >All</button>
+        <button onClick={() => setActiveCategory(null)}
+          className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${!activeCategory ? 'bg-vesta-red text-white' : 'bg-slate-100 text-slate-500'}`}>All</button>
         {categories.map(cat => (
-          <button key={cat}
-            onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
-            className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${activeCategory === cat ? 'bg-vesta-red text-white' : 'bg-slate-100 text-slate-500'}`}
-          >{CATEGORY_LABELS[cat] ?? cat}</button>
+          <button key={cat} onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
+            className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors ${activeCategory === cat ? 'bg-vesta-red text-white' : 'bg-slate-100 text-slate-500'}`}>{cat}</button>
         ))}
       </div>
       <div className="flex flex-wrap gap-2">
@@ -99,6 +92,7 @@ function ExercisePicker({ exercises, onSelect, adding }) {
 export default function Home() {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
+  const { showToast } = useToast()
 
   const [session, setSession] = useState(null)
   const [allExercises, setAllExercises] = useState([])
@@ -108,7 +102,6 @@ export default function Home() {
   const [exerciseOrder, setExerciseOrder] = useState([])
   const [inputs, setInputs] = useState({})
   const [savedSets, setSavedSets] = useState({})
-  const [setCount, setSetCount] = useState({})
   const [expanded, setExpanded] = useState({})
   const [prBadges, setPrBadges] = useState({})
   const [prevSets, setPrevSets] = useState({})
@@ -138,9 +131,7 @@ export default function Home() {
     setTotalTonnage(Math.round(total * 10) / 10)
   }, [])
 
-  useEffect(() => {
-    if (user) load()
-  }, [user])
+  useEffect(() => { if (user) load() }, [user])
 
   useEffect(() => {
     const handler = (e) => { e.preventDefault(); setInstallPrompt(e) }
@@ -156,18 +147,14 @@ export default function Home() {
   }
 
   async function load() {
-    setLoading(true)
-    setError('')
+    setLoading(true); setError('')
     try {
       const [{ data: exList }, { data: existingSess }, { data: past }] = await Promise.all([
         supabase.from('exercises').select('id, name, category').order('name'),
         supabase.from('sessions').select('*').eq('athlete_id', user.id).eq('date', today).maybeSingle(),
         supabase.from('sessions')
           .select('id, date, total_tonnage, session_exercises(id, exercises(name))')
-          .eq('athlete_id', user.id)
-          .neq('date', today)
-          .order('date', { ascending: false })
-          .limit(20),
+          .eq('athlete_id', user.id).neq('date', today).order('date', { ascending: false }).limit(20),
       ])
       setAllExercises(exList || [])
       setPastSessions(past || [])
@@ -177,11 +164,8 @@ export default function Home() {
       if (existingSess.completed_at) setFinished(true)
       const pastIds = (past || []).map(s => s.id)
       await loadSessionExercises(existingSess.id, pastIds)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
+    } catch (err) { setError(err.message) }
+    finally { setLoading(false) }
   }
 
   async function fetchLastTimeSets(exerciseIds, pastSessionIds) {
@@ -217,14 +201,13 @@ export default function Home() {
       supabase.from('sets').select('*').in('session_exercise_id', seIds),
       fetchLastTimeSets(exerciseIds, pastSessionIds),
     ])
-    const newExMap = {}, newExOrder = [], newInputs = {}, newSaved = {}, newSetCount = {}, newExpanded = {}
+    const newExMap = {}, newExOrder = [], newInputs = {}, newSaved = {}, newExpanded = {}
     for (const se of seRows) {
       newExMap[se.id] = { sessionExercise: se, exercise: se.exercises }
       newExOrder.push(se.id)
       newExpanded[se.id] = true
       const setsForThis = existingSets?.filter(s => s.session_exercise_id === se.id) || []
       const numSets = Math.max(3, setsForThis.length)
-      newSetCount[se.id] = numSets
       newInputs[se.id] = {}
       newSaved[se.id] = {}
       for (let n = 1; n <= numSets; n++) {
@@ -234,7 +217,7 @@ export default function Home() {
       }
     }
     setExerciseMap(newExMap); setExerciseOrder(newExOrder); setInputs(newInputs)
-    setSavedSets(newSaved); setSetCount(newSetCount); setExpanded(newExpanded)
+    setSavedSets(newSaved); setExpanded(newExpanded)
     setPrevSets(lastTime)
     recalcTonnage(newSaved)
   }
@@ -256,7 +239,6 @@ export default function Home() {
       const seId = newSE.id
       setExerciseMap(prev => ({ ...prev, [seId]: { sessionExercise: newSE, exercise: newSE.exercises } }))
       setExerciseOrder(prev => [...prev, seId])
-      setSetCount(prev => ({ ...prev, [seId]: 3 }))
       setExpanded(prev => ({ ...prev, [seId]: true }))
       setSavedSets(prev => ({ ...prev, [seId]: { 1: null, 2: null, 3: null } }))
       setInputs(prev => ({ ...prev, [seId]: { 1: { weight: '', reps: '' }, 2: { weight: '', reps: '' }, 3: { weight: '', reps: '' } } }))
@@ -269,11 +251,40 @@ export default function Home() {
     finally { setAddingExercise(false) }
   }
 
+  // Derive set keys from inputs rather than a separate count
+  function getSetNums(seId) {
+    return Object.keys(inputs[seId] || {}).map(Number).sort((a, b) => a - b)
+  }
+
   function addSet(seId) {
-    const n = (setCount[seId] || 3) + 1
-    setSetCount(prev => ({ ...prev, [seId]: n }))
+    const existing = getSetNums(seId)
+    const n = existing.length > 0 ? Math.max(...existing) + 1 : 1
     setSavedSets(prev => ({ ...prev, [seId]: { ...prev[seId], [n]: null } }))
     setInputs(prev => ({ ...prev, [seId]: { ...prev[seId], [n]: { weight: '', reps: '' } } }))
+  }
+
+  async function deleteSet(seId, n) {
+    const setId = savedSets[seId]?.[n]?.id
+    if (setId) await supabase.from('sets').delete().eq('id', setId)
+    setSavedSets(prev => {
+      const copy = { ...prev[seId] }
+      delete copy[n]
+      const next = { ...prev, [seId]: copy }
+      recalcTonnage(next)
+      return next
+    })
+    setInputs(prev => {
+      const copy = { ...prev[seId] }
+      delete copy[n]
+      return { ...prev, [seId]: copy }
+    })
+    // Update tonnage in DB
+    setTimeout(() => {
+      const t = Object.values(savedSets).reduce((sum, sets) => {
+        return sum + Object.values(sets).reduce((s2, s) => s2 + (s ? s.weight * s.reps : 0), 0)
+      }, 0)
+      if (session) supabase.from('sessions').update({ total_tonnage: Math.round(t * 10) / 10 }).eq('id', session.id)
+    }, 0)
   }
 
   function updateInput(seId, n, field, value) {
@@ -301,33 +312,22 @@ export default function Home() {
       let t = 0
       for (const sets of Object.values(newSaved)) for (const s of Object.values(sets)) if (s) t += s.weight * s.reps
       supabase.from('sessions').update({ total_tonnage: Math.round(t * 10) / 10 }).eq('id', session.id)
+
       const exData = exerciseMap[seId]
+      let isPR = false
       if (exData) {
         const exerciseId = exData.exercise.id
         const { data: pb } = await supabase.from('personal_bests').select('weight').eq('athlete_id', user.id).eq('exercise_id', exerciseId).maybeSingle()
         if (!pb || weight > pb.weight) {
           await supabase.from('personal_bests').upsert({ athlete_id: user.id, exercise_id: exerciseId, weight, reps, achieved_at: new Date().toISOString(), set_id: setRow.id }, { onConflict: 'athlete_id,exercise_id' })
           setPrBadges(prev => ({ ...prev, [seId]: true }))
+          isPR = true
+          showToast(`🏆 New PR — ${exData.exercise.name}!`, 'pr')
         }
       }
+      if (!isPR) showToast('Set logged')
     } catch (err) { console.error('Error logging set:', err) }
     finally { setSavingSet(prev => ({ ...prev, [key]: false })) }
-  }
-
-  async function handleAddDate(date) {
-    setAddingDate(true)
-    try {
-      const { data: existing } = await supabase
-        .from('sessions').select('id').eq('athlete_id', user.id).eq('date', date).maybeSingle()
-      if (existing) { navigate(`/athlete/session/${existing.id}`); return }
-      const { data: newSess, error } = await supabase
-        .from('sessions')
-        .insert({ athlete_id: user.id, date, completed_at: `${date}T23:59:59.000Z` })
-        .select().single()
-      if (error) throw error
-      navigate(`/athlete/session/${newSess.id}`)
-    } catch (err) { console.error(err) }
-    finally { setAddingDate(false) }
   }
 
   async function deleteExercise(seId) {
@@ -337,7 +337,6 @@ export default function Home() {
     setExerciseMap(prev => { const n = { ...prev }; delete n[seId]; return n })
     setInputs(prev => { const n = { ...prev }; delete n[seId]; return n })
     setExpanded(prev => { const n = { ...prev }; delete n[seId]; return n })
-    setSetCount(prev => { const n = { ...prev }; delete n[seId]; return n })
     setSavedSets(prev => { const n = { ...prev }; delete n[seId]; recalcTonnage(n); return n })
   }
 
@@ -348,31 +347,46 @@ export default function Home() {
     setSavingNotes(false)
   }
 
+  async function handleAddDate(date) {
+    setAddingDate(true)
+    try {
+      const { data: existing } = await supabase.from('sessions').select('id').eq('athlete_id', user.id).eq('date', date).maybeSingle()
+      if (existing) { navigate(`/athlete/session/${existing.id}`); return }
+      const { data: newSess, error } = await supabase.from('sessions').insert({ athlete_id: user.id, date, completed_at: `${date}T23:59:59.000Z` }).select().single()
+      if (error) throw error
+      navigate(`/athlete/session/${newSess.id}`)
+    } catch (err) { console.error(err) }
+    finally { setAddingDate(false) }
+  }
+
   async function finishSession() {
     setFinishing(true)
     try {
       await supabase.from('sessions').update({ completed_at: new Date().toISOString(), total_tonnage: totalTonnage }).eq('id', session.id)
       setFinished(true); setShowFinish(false)
+      showToast('Session complete 🎉')
     } catch (err) { setError(err.message) }
     finally { setFinishing(false) }
   }
 
   const completedSets = Object.values(savedSets).reduce((sum, sets) => sum + Object.values(sets).filter(Boolean).length, 0)
-  const totalSets = Object.values(setCount).reduce((sum, n) => sum + n, 0)
+  const totalSets = Object.values(inputs).reduce((sum, seInputs) => sum + Object.keys(seInputs).length, 0)
 
   const firstName = profile?.name?.trim().split(' ')[0] || ''
   const prCount = Object.values(prBadges).filter(Boolean).length
   const congratsMessages = prCount > 0
-    ? [`${prCount} new personal record${prCount > 1 ? 's' : ''}. That's what it's about.`, `PRs in the books. Keep that momentum.`, `New personal best${prCount > 1 ? 's' : ''}. The hard work is paying off.`]
+    ? [`${prCount} new personal record${prCount > 1 ? 's' : ''}. That's what it's about.`]
     : totalTonnage >= 2000
-    ? [`${(totalTonnage / 1000).toFixed(1)} tonnes moved. Serious work today.`, `That's a big session. Recovery matters too.`, `Heavy day done. Your future self thanks you.`]
-    : [`Consistency is everything. Well done.`, `Another one in the books. Keep showing up.`, `Good session. Progress is progress.`, `Every rep counts. Nice work.`]
+    ? [`${(totalTonnage / 1000).toFixed(1)} tonnes moved. Serious work today.`]
+    : ['Consistency is everything. Well done.', 'Another one in the books. Keep showing up.', 'Good session. Progress is progress.']
   const congratsMsg = congratsMessages[new Date().getDay() % congratsMessages.length]
 
   const isIOS = /iphone|ipad|ipod/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
   const isStandalone = typeof window !== 'undefined' && window.navigator.standalone === true
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen"><Spinner size="lg" /></div>
+  const { pullDistance, refreshing, isTriggered, handlers: ptrHandlers } = usePullToRefresh(load)
+
+  if (loading && !refreshing) return <div className="flex items-center justify-center min-h-screen"><Spinner size="lg" /></div>
 
   if (error) return (
     <div className="px-4 pt-16 text-center">
@@ -387,16 +401,13 @@ export default function Home() {
         <div className="w-16 h-16 bg-vesta-red/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <CheckCircle2 size={32} className="text-vesta-red" />
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-1">
-          {firstName ? `Nice work, ${firstName}!` : 'Session complete'}
-        </h1>
+        <h1 className="text-2xl font-bold text-slate-900 mb-1">{firstName ? `Nice work, ${firstName}!` : 'Session complete'}</h1>
         <p className="text-slate-500 text-sm mb-1">{congratsMsg}</p>
         <p className="text-xs text-slate-400 mb-4">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
         <button onClick={() => navigate(`/athlete/session/${session.id}`)} className="flex items-center gap-1.5 text-xs text-vesta-red font-medium mx-auto">
           <Pencil size={13} /> Edit session
         </button>
       </div>
-
       <div className="bg-white rounded-2xl p-5 border border-slate-200 mb-4 shadow-sm">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div><div className="text-2xl font-bold text-vesta-red">{completedSets}</div><div className="text-xs text-slate-400 mt-0.5">Sets done</div></div>
@@ -404,30 +415,40 @@ export default function Home() {
           <div><div className="text-2xl font-bold text-slate-900">{exerciseOrder.length}</div><div className="text-xs text-slate-400 mt-0.5">Exercises</div></div>
         </div>
       </div>
-
       {prCount > 0 && (
         <div className="bg-vesta-red/5 border border-vesta-red/20 rounded-2xl p-4 mb-4">
           <div className="flex items-center gap-2 mb-2"><Trophy size={16} className="text-vesta-red" /><span className="text-vesta-red font-semibold text-sm">Personal Records</span></div>
           <ul className="space-y-1">{exerciseOrder.filter(seId => prBadges[seId]).map(seId => <li key={seId} className="text-slate-900 text-sm">{exerciseMap[seId]?.exercise?.name}</li>)}</ul>
         </div>
       )}
-
       <PastSessionsList sessions={pastSessions} onEdit={id => navigate(`/athlete/session/${id}`)} onAddDate={handleAddDate} addingDate={addingDate} />
     </div>
   )
 
   return (
-    <div className="px-4 pt-6 pb-28">
+    <div {...ptrHandlers} className="px-4 pt-6 pb-28">
+      {/* Pull-to-refresh indicator */}
+      {pullDistance > 0 && (
+        <div
+          className="flex items-center justify-center overflow-hidden transition-all duration-150"
+          style={{ height: pullDistance, marginTop: -pullDistance, marginBottom: pullDistance }}
+        >
+          <div className={`transition-all duration-150 ${isTriggered || refreshing ? 'text-vesta-red' : 'text-slate-300'}`}>
+            {refreshing
+              ? <Spinner size="sm" />
+              : <RotateCcw size={18} className={isTriggered ? 'rotate-180' : ''} style={{ transition: 'transform 0.15s' }} />
+            }
+          </div>
+        </div>
+      )}
+
       <div className="flex items-start justify-between mb-5">
         <div>
           <p className="text-xs text-slate-400 uppercase tracking-wider font-medium mb-0.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-          <h1 className="text-2xl font-bold text-slate-900">
-            {profile?.name ? `Welcome back, ${profile.name.trim().split(' ')[0]}` : "Today's session"}
-          </h1>
+          <h1 className="text-2xl font-bold text-slate-900">{profile?.name ? `Welcome back, ${profile.name.trim().split(' ')[0]}` : "Today's session"}</h1>
         </div>
         {installPrompt && (
-          <button onClick={handleInstall}
-            className="flex items-center gap-1.5 bg-vesta-navy text-white text-xs font-semibold px-3 py-2 rounded-xl shadow-sm flex-shrink-0 mt-1">
+          <button onClick={handleInstall} className="flex items-center gap-1.5 bg-vesta-navy text-white text-xs font-semibold px-3 py-2 rounded-xl shadow-sm flex-shrink-0 mt-1">
             <Download size={13} /> Add to phone
           </button>
         )}
@@ -438,12 +459,9 @@ export default function Home() {
           <Share size={16} className="text-vesta-navy flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-vesta-navy mb-0.5">Add to your home screen</p>
-            <p className="text-xs text-slate-500">Tap the <strong>Share</strong> button in Safari, then <strong>Add to Home Screen</strong> for the full app experience.</p>
+            <p className="text-xs text-slate-500">Tap <strong>Share</strong> in Safari, then <strong>Add to Home Screen</strong>.</p>
           </div>
-          <button onClick={() => setIosHintDismissed(true)}
-            className="text-slate-400 hover:text-slate-600 flex-shrink-0 mt-0.5">
-            <X size={15} />
-          </button>
+          <button onClick={() => setIosHintDismissed(true)} className="text-slate-400 hover:text-slate-600 flex-shrink-0 mt-0.5"><X size={15} /></button>
         </div>
       )}
 
@@ -468,17 +486,14 @@ export default function Home() {
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm mb-4 overflow-hidden">
         {!showPicker ? (
-          <button onClick={() => setShowPicker(true)}
-            className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-semibold text-vesta-red active:bg-slate-50 transition-colors">
+          <button onClick={() => setShowPicker(true)} className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-semibold text-vesta-red active:bg-slate-50 transition-colors">
             <Plus size={16} /> Add exercise
           </button>
         ) : (
           <div className="p-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Choose exercise</p>
-              <button onClick={() => setShowPicker(false)} className="text-slate-400 hover:text-slate-600 p-1 -mr-1">
-                <X size={16} />
-              </button>
+              <button onClick={() => setShowPicker(false)} className="text-slate-400 hover:text-slate-600 p-1 -mr-1"><X size={16} /></button>
             </div>
             <ExercisePicker exercises={allExercises} onSelect={addExercise} adding={addingExercise} />
           </div>
@@ -487,9 +502,7 @@ export default function Home() {
 
       {exerciseOrder.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mb-4 shadow-sm">
-            <Zap size={28} className="text-slate-300" />
-          </div>
+          <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mb-4 shadow-sm"><Zap size={28} className="text-slate-300" /></div>
           <p className="text-slate-400 text-sm">Add your first exercise to get started.</p>
         </div>
       )}
@@ -498,72 +511,69 @@ export default function Home() {
         {[...exerciseOrder].reverse().map(seId => {
           const { exercise } = exerciseMap[seId] || {}
           if (!exercise) return null
-          const numSets = setCount[seId] || 3
-          const setNums = Array.from({ length: numSets }, (_, i) => i + 1)
+          const setNums = getSetNums(seId)
           const isExpanded = expanded[seId] ?? true
           const isPR = prBadges[seId]
           const last = prevSets[exercise.id] || []
           const lastWeights = last.map(s => s.weight).filter(Boolean)
           const allLastCompleted = last.length > 0 && last.every(s => s.weight && s.reps)
           const suggestedWeight = allLastCompleted ? Math.max(...lastWeights) + 2.5 : null
+
           return (
             <div key={seId} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
               <div className="px-4 pt-4 pb-3 flex items-center justify-between">
-                <button onClick={() => setExpanded(prev => ({ ...prev, [seId]: !prev[seId] }))}
-                  className="flex items-center gap-2 flex-wrap flex-1 text-left">
+                <button onClick={() => setExpanded(prev => ({ ...prev, [seId]: !prev[seId] }))} className="flex items-center gap-2 flex-wrap flex-1 text-left">
                   <span className="text-base font-semibold text-slate-900">{exercise.name}</span>
                   {isPR && <span className="flex items-center gap-1 bg-vesta-red text-white text-xs font-bold px-2 py-0.5 rounded-full"><Trophy size={10} /> PR</span>}
                 </button>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <button onClick={() => deleteExercise(seId)} className="text-slate-300 hover:text-red-400 transition-colors p-1">
-                    <Trash2 size={15} />
-                  </button>
+                  <button onClick={() => deleteExercise(seId)} className="text-slate-300 hover:text-red-400 transition-colors p-1"><Trash2 size={15} /></button>
                   <div className="text-slate-400" onClick={() => setExpanded(prev => ({ ...prev, [seId]: !prev[seId] }))}>
                     {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                   </div>
                 </div>
               </div>
+
               {last.length > 0 && (
                 <div className="px-4 pb-2 flex items-center gap-2 flex-wrap">
                   <span className="text-xs text-slate-400">Last time:</span>
-                  {last.map((s, i) => (
-                    <span key={i} className="text-xs bg-slate-100 text-slate-500 rounded-md px-1.5 py-0.5">{s.weight}kg×{s.reps}</span>
-                  ))}
-                  {suggestedWeight && (
-                    <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-md px-1.5 py-0.5 font-medium">
-                      Try {suggestedWeight}kg ↑
-                    </span>
-                  )}
+                  {last.map((s, i) => <span key={i} className="text-xs bg-slate-100 text-slate-500 rounded-md px-1.5 py-0.5">{s.weight}kg×{s.reps}</span>)}
+                  {suggestedWeight && <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-md px-1.5 py-0.5 font-medium">Try {suggestedWeight}kg ↑</span>}
                 </div>
               )}
+
               {isExpanded && (
-                <div className="px-4 pb-4 space-y-3">
+                <div className="px-4 pb-4 space-y-2">
                   <div className="grid grid-cols-[32px_1fr_1fr_44px] gap-2 px-1">
                     <span className="text-xs text-slate-400 text-center">#</span>
                     <span className="text-xs text-slate-400 text-center">kg</span>
                     <span className="text-xs text-slate-400 text-center">reps</span>
                     <span />
                   </div>
+
                   {setNums.map(n => {
                     const isSaved = !!savedSets[seId]?.[n]
                     const isSaving = savingSet[`${seId}-${n}`]
                     const inp = inputs[seId]?.[n] || { weight: '', reps: '' }
                     return (
-                      <div key={n} className="grid grid-cols-[32px_1fr_1fr_44px] gap-2 items-center">
-                        <span className="text-xs font-mono text-center">
-                          {isSaved ? <CheckCircle2 size={14} className="mx-auto text-vesta-red" /> : <span className="text-slate-400">{n}</span>}
-                        </span>
-                        <input type="number" inputMode="decimal" value={inp.weight} onChange={e => updateInput(seId, n, 'weight', e.target.value)} placeholder="kg"
-                          className={`bg-slate-100 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300'}`} />
-                        <input type="number" inputMode="numeric" value={inp.reps} onChange={e => updateInput(seId, n, 'reps', e.target.value)} placeholder="reps"
-                          className={`bg-slate-100 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300'}`} />
-                        <button onClick={() => logSet(seId, n)} disabled={isSaving || !inp.weight || !inp.reps}
-                          className={`h-9 w-full rounded-lg text-xs font-semibold transition-all disabled:opacity-40 flex items-center justify-center ${isSaved ? 'bg-vesta-red/10 text-vesta-red hover:bg-vesta-red/20' : 'bg-vesta-red text-white hover:bg-vesta-red-dark'}`}>
-                          {isSaving ? <Spinner size="sm" /> : isSaved ? '✓' : 'Log'}
-                        </button>
-                      </div>
+                      <SwipeToDelete key={n} onDelete={() => deleteSet(seId, n)} disabled={isSaving}>
+                        <div className="grid grid-cols-[32px_1fr_1fr_44px] gap-2 items-center py-0.5">
+                          <span className="text-xs font-mono text-center">
+                            {isSaved ? <CheckCircle2 size={14} className="mx-auto text-vesta-red" /> : <span className="text-slate-400">{n}</span>}
+                          </span>
+                          <input type="number" inputMode="decimal" value={inp.weight} onChange={e => updateInput(seId, n, 'weight', e.target.value)} placeholder="kg"
+                            className={`bg-slate-100 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300'}`} />
+                          <input type="number" inputMode="numeric" value={inp.reps} onChange={e => updateInput(seId, n, 'reps', e.target.value)} placeholder="reps"
+                            className={`bg-slate-100 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300'}`} />
+                          <button onClick={() => logSet(seId, n)} disabled={isSaving || !inp.weight || !inp.reps}
+                            className={`h-9 w-full rounded-lg text-xs font-semibold transition-all disabled:opacity-40 flex items-center justify-center ${isSaved ? 'bg-vesta-red/10 text-vesta-red hover:bg-vesta-red/20' : 'bg-vesta-red text-white hover:bg-vesta-red-dark'}`}>
+                            {isSaving ? <Spinner size="sm" /> : isSaved ? '✓' : 'Log'}
+                          </button>
+                        </div>
+                      </SwipeToDelete>
                     )
                   })}
+
                   <button onClick={() => addSet(seId)}
                     className="w-full py-2 rounded-xl text-xs text-slate-400 hover:text-slate-600 border border-dashed border-slate-300 hover:border-slate-400 transition-colors flex items-center justify-center gap-1">
                     <Plus size={12} /> Add set
@@ -578,14 +588,10 @@ export default function Home() {
       {session && (
         <div className="bg-white rounded-2xl border border-slate-200 p-4 mt-4 shadow-sm">
           <p className="text-xs font-medium text-slate-500 mb-2">Session notes</p>
-          <textarea
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-            onBlur={saveNotes}
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} onBlur={saveNotes}
             placeholder="How did the session feel? Any notes for your coach..."
             rows={3}
-            className="w-full bg-slate-100 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-vesta-red/40 resize-none transition-all"
-          />
+            className="w-full bg-slate-100 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-vesta-red/40 resize-none transition-all" />
           {savingNotes && <p className="text-xs text-slate-400 mt-1">Saving...</p>}
         </div>
       )}

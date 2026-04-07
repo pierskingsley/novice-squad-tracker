@@ -3,7 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Spinner from '../../components/ui/Spinner'
-import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, ArrowLeft, Trash2, X } from 'lucide-react'
+import SwipeToDelete from '../../components/ui/SwipeToDelete'
+import { useToast } from '../../context/ToastContext'
+import { usePullToRefresh } from '../../hooks/usePullToRefresh'
+import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, ArrowLeft, Trash2, X, RotateCcw } from 'lucide-react'
 
 const CATEGORY_LABELS = { compound: 'Compounds', accessory: 'Accessory', core: 'Core' }
 const CATEGORY_ORDER = ['compound', 'accessory', 'core']
@@ -43,6 +46,7 @@ export default function SessionEdit() {
   const { id } = useParams()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { showToast } = useToast()
 
   const [session, setSession] = useState(null)
   const [allExercises, setAllExercises] = useState([])
@@ -52,7 +56,6 @@ export default function SessionEdit() {
   const [exerciseOrder, setExerciseOrder] = useState([])
   const [inputs, setInputs] = useState({})
   const [savedSets, setSavedSets] = useState({})
-  const [setCount, setSetCount] = useState({})
   const [expanded, setExpanded] = useState({})
   const [prBadges, setPrBadges] = useState({})
   const [totalTonnage, setTotalTonnage] = useState(0)
@@ -72,11 +75,7 @@ export default function SessionEdit() {
     setTotalTonnage(Math.round(total * 10) / 10)
   }, [])
 
-  useEffect(() => {
-    if (user && id) load()
-  }, [user, id])
-
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
       const [{ data: sess, error: se }, { data: exList }] = await Promise.all([
@@ -85,21 +84,20 @@ export default function SessionEdit() {
       ])
       if (se) throw se
       setSession(sess); setNotes(sess?.notes || ''); setAllExercises(exList || [])
-      // Auto-complete past sessions so they count in history
       if (sess && !sess.completed_at && sess.date < new Date().toISOString().split('T')[0]) {
         supabase.from('sessions').update({ completed_at: `${sess.date}T23:59:59.000Z` }).eq('id', sess.id)
       }
       const { data: seRows } = await supabase.from('session_exercises').select('*, exercises(id, name)').eq('session_id', id).order('order_index')
-      if (!seRows || seRows.length === 0) return
+      if (!seRows || seRows.length === 0) { setLoading(false); return }
       const seIds = seRows.map(s => s.id)
       const { data: existingSets } = await supabase.from('sets').select('*').in('session_exercise_id', seIds)
-      const newExMap = {}, newExOrder = [], newInputs = {}, newSaved = {}, newSetCount = {}, newExpanded = {}
+      const newExMap = {}, newExOrder = [], newInputs = {}, newSaved = {}, newExpanded = {}
       for (const se of seRows) {
         newExMap[se.id] = { sessionExercise: se, exercise: se.exercises }
         newExOrder.push(se.id); newExpanded[se.id] = true
         const setsForThis = existingSets?.filter(s => s.session_exercise_id === se.id) || []
         const numSets = Math.max(3, setsForThis.length)
-        newSetCount[se.id] = numSets; newInputs[se.id] = {}; newSaved[se.id] = {}
+        newInputs[se.id] = {}; newSaved[se.id] = {}
         for (let n = 1; n <= numSets; n++) {
           const saved = setsForThis.find(s => s.set_number === n)
           newSaved[se.id][n] = saved ? { id: saved.id, weight: saved.weight, reps: saved.reps } : null
@@ -107,10 +105,20 @@ export default function SessionEdit() {
         }
       }
       setExerciseMap(newExMap); setExerciseOrder(newExOrder); setInputs(newInputs)
-      setSavedSets(newSaved); setSetCount(newSetCount); setExpanded(newExpanded)
+      setSavedSets(newSaved); setExpanded(newExpanded)
       recalcTonnage(newSaved)
     } catch (err) { setError(err.message) }
     finally { setLoading(false) }
+  }, [user, id, recalcTonnage])
+
+  useEffect(() => {
+    if (user && id) load()
+  }, [user, id])
+
+  const { pullDistance, refreshing, isTriggered, handlers: ptrHandlers } = usePullToRefresh(load)
+
+  function getSetNums(seId) {
+    return Object.keys(inputs[seId] || {}).map(Number).sort((a, b) => a - b)
   }
 
   async function addExercise(exerciseId) {
@@ -124,7 +132,6 @@ export default function SessionEdit() {
       const seId = newSE.id
       setExerciseMap(prev => ({ ...prev, [seId]: { sessionExercise: newSE, exercise: newSE.exercises } }))
       setExerciseOrder(prev => [...prev, seId])
-      setSetCount(prev => ({ ...prev, [seId]: 3 }))
       setExpanded(prev => ({ ...prev, [seId]: true }))
       setSavedSets(prev => ({ ...prev, [seId]: { 1: null, 2: null, 3: null } }))
       setInputs(prev => ({ ...prev, [seId]: { 1: { weight: '', reps: '' }, 2: { weight: '', reps: '' }, 3: { weight: '', reps: '' } } }))
@@ -134,10 +141,22 @@ export default function SessionEdit() {
   }
 
   function addSet(seId) {
-    const n = (setCount[seId] || 3) + 1
-    setSetCount(prev => ({ ...prev, [seId]: n }))
+    const existing = getSetNums(seId)
+    const n = existing.length > 0 ? Math.max(...existing) + 1 : 1
     setSavedSets(prev => ({ ...prev, [seId]: { ...prev[seId], [n]: null } }))
     setInputs(prev => ({ ...prev, [seId]: { ...prev[seId], [n]: { weight: '', reps: '' } } }))
+  }
+
+  async function deleteSet(seId, n) {
+    const setId = savedSets[seId]?.[n]?.id
+    if (setId) await supabase.from('sets').delete().eq('id', setId)
+    setSavedSets(prev => {
+      const copy = { ...prev[seId] }; delete copy[n]
+      const next = { ...prev, [seId]: copy }; recalcTonnage(next); return next
+    })
+    setInputs(prev => {
+      const copy = { ...prev[seId] }; delete copy[n]; return { ...prev, [seId]: copy }
+    })
   }
 
   function updateInput(seId, n, field, value) {
@@ -166,14 +185,18 @@ export default function SessionEdit() {
       for (const sets of Object.values(newSaved)) for (const s of Object.values(sets)) if (s) t += s.weight * s.reps
       supabase.from('sessions').update({ total_tonnage: Math.round(t * 10) / 10 }).eq('id', id)
       const exData = exerciseMap[seId]
+      let isPR = false
       if (exData) {
         const exerciseId = exData.exercise.id
         const { data: pb } = await supabase.from('personal_bests').select('weight').eq('athlete_id', user.id).eq('exercise_id', exerciseId).maybeSingle()
         if (!pb || weight > pb.weight) {
           await supabase.from('personal_bests').upsert({ athlete_id: user.id, exercise_id: exerciseId, weight, reps, achieved_at: new Date().toISOString(), set_id: setRow.id }, { onConflict: 'athlete_id,exercise_id' })
           setPrBadges(prev => ({ ...prev, [seId]: true }))
+          isPR = true
+          showToast(`🏆 New PR — ${exData.exercise.name}!`, 'pr')
         }
       }
+      if (!isPR) showToast('Set logged')
     } catch (err) { console.error('Error logging set:', err) }
     finally { setSavingSet(prev => ({ ...prev, [key]: false })) }
   }
@@ -181,11 +204,10 @@ export default function SessionEdit() {
   async function deleteExercise(seId) {
     await supabase.from('sets').delete().eq('session_exercise_id', seId)
     await supabase.from('session_exercises').delete().eq('id', seId)
-    setExerciseOrder(prev => prev.filter(id => id !== seId))
+    setExerciseOrder(prev => prev.filter(i => i !== seId))
     setExerciseMap(prev => { const n = { ...prev }; delete n[seId]; return n })
     setInputs(prev => { const n = { ...prev }; delete n[seId]; return n })
     setExpanded(prev => { const n = { ...prev }; delete n[seId]; return n })
-    setSetCount(prev => { const n = { ...prev }; delete n[seId]; return n })
     setSavedSets(prev => { const n = { ...prev }; delete n[seId]; recalcTonnage(n); return n })
   }
 
@@ -196,7 +218,7 @@ export default function SessionEdit() {
     setSavingNotes(false)
   }
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen"><Spinner size="lg" /></div>
+  if (loading && !refreshing) return <div className="flex items-center justify-center min-h-screen"><Spinner size="lg" /></div>
 
   if (error) return (
     <div className="px-4 pt-16 text-center">
@@ -209,10 +231,19 @@ export default function SessionEdit() {
     ? new Date(session.date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
     : ''
   const completedSets = Object.values(savedSets).reduce((sum, sets) => sum + Object.values(sets).filter(Boolean).length, 0)
-  const totalSets = Object.values(setCount).reduce((sum, n) => sum + n, 0)
+  const totalSets = Object.values(inputs).reduce((sum, seInputs) => sum + Object.keys(seInputs).length, 0)
 
   return (
-    <div className="px-4 pt-6 pb-28">
+    <div {...ptrHandlers} className="px-4 pt-6 pb-28">
+      {pullDistance > 0 && (
+        <div className="flex items-center justify-center overflow-hidden transition-all duration-150"
+          style={{ height: pullDistance, marginTop: -pullDistance, marginBottom: pullDistance }}>
+          <div className={`transition-all duration-150 ${isTriggered || refreshing ? 'text-vesta-red' : 'text-slate-300'}`}>
+            {refreshing ? <Spinner size="sm" /> : <RotateCcw size={18} className={isTriggered ? 'rotate-180' : ''} />}
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-3 mb-5">
         <button onClick={() => navigate(-1)} className="text-slate-400 hover:text-slate-700 transition-colors">
           <ArrowLeft size={20} />
@@ -278,8 +309,7 @@ export default function SessionEdit() {
         {[...exerciseOrder].reverse().map(seId => {
           const { exercise } = exerciseMap[seId] || {}
           if (!exercise) return null
-          const numSets = setCount[seId] || 3
-          const setNums = Array.from({ length: numSets }, (_, i) => i + 1)
+          const setNums = getSetNums(seId)
           const isExpanded = expanded[seId] ?? true
           const isPR = prBadges[seId]
           return (
@@ -300,8 +330,8 @@ export default function SessionEdit() {
                 </div>
               </div>
               {isExpanded && (
-                <div className="px-4 pb-4 space-y-3">
-                  <div className="grid grid-cols-[32px_1fr_1fr_44px] gap-2 px-1">
+                <div className="px-4 pb-4 space-y-1">
+                  <div className="grid grid-cols-[32px_1fr_1fr_44px] gap-2 px-1 pb-1">
                     <span className="text-xs text-slate-400 text-center">#</span>
                     <span className="text-xs text-slate-400 text-center">kg</span>
                     <span className="text-xs text-slate-400 text-center">reps</span>
@@ -312,23 +342,25 @@ export default function SessionEdit() {
                     const isSaving = savingSet[`${seId}-${n}`]
                     const inp = inputs[seId]?.[n] || { weight: '', reps: '' }
                     return (
-                      <div key={n} className="grid grid-cols-[32px_1fr_1fr_44px] gap-2 items-center">
-                        <span className="text-xs font-mono text-center">
-                          {isSaved ? <CheckCircle2 size={14} className="mx-auto text-vesta-red" /> : <span className="text-slate-400">{n}</span>}
-                        </span>
-                        <input type="number" inputMode="decimal" value={inp.weight} onChange={e => updateInput(seId, n, 'weight', e.target.value)} placeholder="kg"
-                          className={`bg-slate-100 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300'}`} />
-                        <input type="number" inputMode="numeric" value={inp.reps} onChange={e => updateInput(seId, n, 'reps', e.target.value)} placeholder="reps"
-                          className={`bg-slate-100 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300'}`} />
-                        <button onClick={() => logSet(seId, n)} disabled={isSaving || !inp.weight || !inp.reps}
-                          className={`h-9 w-full rounded-lg text-xs font-semibold transition-all disabled:opacity-40 flex items-center justify-center ${isSaved ? 'bg-vesta-red/10 text-vesta-red hover:bg-vesta-red/20' : 'bg-vesta-red text-white hover:bg-vesta-red-dark'}`}>
-                          {isSaving ? <Spinner size="sm" /> : isSaved ? '✓' : 'Log'}
-                        </button>
-                      </div>
+                      <SwipeToDelete key={n} onDelete={() => deleteSet(seId, n)} disabled={isSaving}>
+                        <div className="grid grid-cols-[32px_1fr_1fr_44px] gap-2 items-center py-0.5">
+                          <span className="text-xs font-mono text-center">
+                            {isSaved ? <CheckCircle2 size={14} className="mx-auto text-vesta-red" /> : <span className="text-slate-400">{n}</span>}
+                          </span>
+                          <input type="number" inputMode="decimal" value={inp.weight} onChange={e => updateInput(seId, n, 'weight', e.target.value)} placeholder="kg"
+                            className={`bg-slate-100 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300'}`} />
+                          <input type="number" inputMode="numeric" value={inp.reps} onChange={e => updateInput(seId, n, 'reps', e.target.value)} placeholder="reps"
+                            className={`bg-slate-100 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300'}`} />
+                          <button onClick={() => logSet(seId, n)} disabled={isSaving || !inp.weight || !inp.reps}
+                            className={`h-9 w-full rounded-lg text-xs font-semibold transition-all disabled:opacity-40 flex items-center justify-center ${isSaved ? 'bg-vesta-red/10 text-vesta-red hover:bg-vesta-red/20' : 'bg-vesta-red text-white hover:bg-vesta-red-dark'}`}>
+                            {isSaving ? <Spinner size="sm" /> : isSaved ? '✓' : 'Log'}
+                          </button>
+                        </div>
+                      </SwipeToDelete>
                     )
                   })}
                   <button onClick={() => addSet(seId)}
-                    className="w-full py-2 rounded-xl text-xs text-slate-400 hover:text-slate-600 border border-dashed border-slate-300 hover:border-slate-400 transition-colors flex items-center justify-center gap-1">
+                    className="w-full py-2 rounded-xl text-xs text-slate-400 hover:text-slate-600 border border-dashed border-slate-300 hover:border-slate-400 transition-colors flex items-center justify-center gap-1 mt-2">
                     <Plus size={12} /> Add set
                   </button>
                 </div>

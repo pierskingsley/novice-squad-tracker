@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Spinner from '../../components/ui/Spinner'
-import { TrendingUp, ChevronDown } from 'lucide-react'
+import { usePullToRefresh } from '../../hooks/usePullToRefresh'
+import { TrendingUp, ChevronDown, RotateCcw } from 'lucide-react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
@@ -37,15 +38,7 @@ export default function Progress() {
   const [loading, setLoading] = useState(true)
   const [chartLoading, setChartLoading] = useState(false)
 
-  useEffect(() => {
-    if (user) loadExercises()
-  }, [user])
-
-  useEffect(() => {
-    if (selectedId) loadChartData(selectedId)
-  }, [selectedId])
-
-  async function loadExercises() {
+  const loadExercises = useCallback(async () => {
     setLoading(true)
     const { data: sessData } = await supabase
       .from('sessions')
@@ -76,7 +69,17 @@ export default function Progress() {
     setExercises(unique)
     if (unique.length > 0) setSelectedId(unique[0].id)
     setLoading(false)
-  }
+  }, [user])
+
+  useEffect(() => {
+    if (user) loadExercises()
+  }, [user])
+
+  useEffect(() => {
+    if (selectedId) loadChartData(selectedId)
+  }, [selectedId])
+
+  const { pullDistance, refreshing, isTriggered, handlers: ptrHandlers } = usePullToRefresh(loadExercises)
 
   async function loadChartData(exerciseId) {
     setChartLoading(true)
@@ -141,12 +144,20 @@ export default function Progress() {
     setChartLoading(false)
   }
 
-  if (loading) {
+  if (loading && !refreshing) {
     return <div className="flex justify-center pt-20"><Spinner size="lg" /></div>
   }
 
   return (
-    <div className="px-4 pt-6">
+    <div {...ptrHandlers} className="px-4 pt-6">
+      {pullDistance > 0 && (
+        <div className="flex items-center justify-center overflow-hidden transition-all duration-150"
+          style={{ height: pullDistance, marginTop: -pullDistance, marginBottom: pullDistance }}>
+          <div className={`transition-all duration-150 ${isTriggered || refreshing ? 'text-vesta-red' : 'text-slate-300'}`}>
+            {refreshing ? <Spinner size="sm" /> : <RotateCcw size={18} className={isTriggered ? 'rotate-180' : ''} />}
+          </div>
+        </div>
+      )}
       <h1 className="text-2xl font-bold text-slate-900 mb-5">Progress</h1>
 
       {exercises.length === 0 ? (
