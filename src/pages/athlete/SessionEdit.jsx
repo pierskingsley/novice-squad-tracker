@@ -398,11 +398,10 @@ export default function SessionEdit() {
               </div>
               {isExpanded && (
                 <div className="px-4 pb-4 space-y-1">
-                  <div className="grid grid-cols-[32px_1fr_1fr_44px] gap-2 px-1 pb-1">
+                  <div className="grid grid-cols-[24px_1fr_1fr] gap-2 px-1 pb-1">
                     <span className="text-xs text-slate-400 text-center">#</span>
                     <span className="text-xs text-slate-400 text-center">kg</span>
                     <span className="text-xs text-slate-400 text-center">reps</span>
-                    <span />
                   </div>
                   {setNums.map(n => {
                     const isSaved = !!savedSets[seId]?.[n]
@@ -410,25 +409,27 @@ export default function SessionEdit() {
                     const inp = inputs[seId]?.[n] || { weight: '', reps: '' }
                     return (
                       <SwipeToDelete key={n} onDelete={() => deleteSet(seId, n)} disabled={isSaving}>
-                        <div className="grid grid-cols-[32px_1fr_1fr_44px] gap-2 items-center py-0.5">
-                          <span className="text-xs font-mono text-center">
-                            {isSaved ? <CheckCircle2 size={14} className="mx-auto text-vesta-red" /> : <span className="text-slate-400">{n}</span>}
-                          </span>
-                          <input type="number" inputMode="decimal" enterKeyHint="next"
-                            ref={el => { inputRefs.current[`${seId}-${n}-weight`] = el }}
-                            value={inp.weight} onChange={e => updateInput(seId, n, 'weight', e.target.value)}
-                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); inputRefs.current[`${seId}-${n}-reps`]?.focus() } }}
-                            placeholder="kg"
-                            className={`bg-slate-100 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300'}`} />
-                          <input type="number" inputMode="numeric" enterKeyHint="done"
-                            ref={el => { inputRefs.current[`${seId}-${n}-reps`] = el }}
-                            value={inp.reps} onChange={e => updateInput(seId, n, 'reps', e.target.value)}
-                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); logSet(seId, n) } }}
-                            placeholder="reps"
-                            className={`bg-slate-100 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300'}`} />
+                        <div className="space-y-1.5 py-1">
+                          <div className="grid grid-cols-[24px_1fr_1fr] gap-2 items-center">
+                            <span className="text-xs font-mono text-center">
+                              {isSaved ? <CheckCircle2 size={13} className="mx-auto text-vesta-red" /> : <span className="text-slate-400">{n}</span>}
+                            </span>
+                            <input type="number" inputMode="decimal" enterKeyHint="next"
+                              ref={el => { inputRefs.current[`${seId}-${n}-weight`] = el }}
+                              value={inp.weight} onChange={e => updateInput(seId, n, 'weight', e.target.value)}
+                              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); inputRefs.current[`${seId}-${n}-reps`]?.focus() } }}
+                              placeholder="kg"
+                              className={`bg-slate-100 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'ring-1 ring-vesta-red/30 focus:ring-vesta-red/50' : 'focus:ring-slate-300'}`} />
+                            <input type="number" inputMode="numeric" enterKeyHint="done"
+                              ref={el => { inputRefs.current[`${seId}-${n}-reps`] = el }}
+                              value={inp.reps} onChange={e => updateInput(seId, n, 'reps', e.target.value)}
+                              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); logSet(seId, n) } }}
+                              placeholder="reps"
+                              className={`bg-slate-100 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'ring-1 ring-vesta-red/30 focus:ring-vesta-red/50' : 'focus:ring-slate-300'}`} />
+                          </div>
                           <button onClick={() => logSet(seId, n)} disabled={isSaving || !inp.weight || !inp.reps}
-                            className={`h-9 w-full rounded-lg text-xs font-semibold transition-all disabled:opacity-40 flex items-center justify-center ${isSaved ? 'bg-vesta-red/10 text-vesta-red hover:bg-vesta-red/20' : 'bg-vesta-red text-white hover:bg-vesta-red-dark'}`}>
-                            {isSaving ? <Spinner size="sm" /> : isSaved ? '✓' : 'Log'}
+                            className={`w-full h-9 rounded-lg text-xs font-semibold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5 ${isSaved ? 'bg-vesta-red/10 text-vesta-red' : 'bg-vesta-red text-white'}`}>
+                            {isSaving ? <Spinner size="sm" /> : isSaved ? <><CheckCircle2 size={13} /> Logged</> : 'Log set'}
                           </button>
                         </div>
                       </SwipeToDelete>
