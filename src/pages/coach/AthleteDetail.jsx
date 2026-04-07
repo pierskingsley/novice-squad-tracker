@@ -20,7 +20,7 @@ export default function AthleteDetail() {
     const [{ data: profile }, { data: sessData }, { data: pbData }] = await Promise.all([
       supabase.from('profiles').select('id, name').eq('id', id).single(),
       supabase.from('sessions')
-        .select('id, date, completed_at, total_tonnage, notes, programme_assignments (programmes (name)), session_exercises (id, order_index, exercises (name), sets (id, set_number, weight, reps))')
+        .select('id, date, completed_at, total_tonnage, notes, session_exercises (id, order_index, exercises (name), sets (id, set_number, weight, reps))')
         .eq('athlete_id', id).or(`completed_at.not.is.null,date.lt.${new Date().toISOString().split('T')[0]}`).order('date', { ascending: false }).limit(20),
       supabase.from('personal_bests').select('weight, reps, achieved_at, exercises(name)').eq('athlete_id', id).order('weight', { ascending: false }),
     ])
@@ -95,7 +95,6 @@ export default function AthleteDetail() {
         <div className="space-y-3">
           {sessions.map(sess => {
             const isOpen = expanded[sess.id]
-            const progName = sess.programme_assignments?.programmes?.name
             const orderedExercises = (sess.session_exercises || []).sort((a, b) => a.order_index - b.order_index)
             return (
               <div key={sess.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
@@ -103,7 +102,6 @@ export default function AthleteDetail() {
                   <div>
                     <div className="text-sm font-semibold text-slate-900">{formatDate(sess.date)}</div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      {progName && <span className="text-xs text-slate-400">{progName}</span>}
                       {sess.total_tonnage > 0 && (
                         <span className="text-xs text-vesta-red font-medium">
                           {sess.total_tonnage >= 1000 ? `${(sess.total_tonnage / 1000).toFixed(1)}t` : `${sess.total_tonnage}kg`}

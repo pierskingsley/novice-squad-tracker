@@ -17,9 +17,6 @@ export default function History() {
       .from('sessions')
       .select(`
         id, date, completed_at, total_tonnage,
-        programme_assignments (
-          programmes ( name )
-        ),
         session_exercises (
           id, notes, order_index,
           exercises ( name ),
@@ -81,7 +78,6 @@ export default function History() {
         <div className="space-y-3">
           {sessions.map(sess => {
             const isOpen = expanded[sess.id]
-            const progName = sess.programme_assignments?.programmes?.name
             const orderedExercises = (sess.session_exercises || [])
               .sort((a, b) => a.order_index - b.order_index)
             const completedDate = sess.completed_at
@@ -96,7 +92,6 @@ export default function History() {
                 >
                   <div>
                     <div className="text-sm font-bold text-slate-900">{formatDate(sess.date)}</div>
-                    {progName && <div className="text-xs text-slate-500 mt-0.5">{progName}</div>}
                     <div className="flex items-center gap-3 mt-2">
                       <span className="text-xs text-slate-400">
                         {orderedExercises.length} exercise{orderedExercises.length !== 1 ? 's' : ''}

@@ -10,7 +10,7 @@ import { useToast } from '../../context/ToastContext'
 import { usePullToRefresh } from '../../hooks/usePullToRefresh'
 import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, Zap, Pencil, CalendarPlus, Trash2, Share, X, Download, RotateCcw } from 'lucide-react'
 
-function PastSessionsList({ sessions, onEdit, onAddDate, addingDate }) {
+function PastSessionsList({ sessions, onEdit, onDelete, onAddDate, addingDate }) {
   const [pickedDate, setPickedDate] = useState('')
 
   return (
@@ -51,9 +51,14 @@ function PastSessionsList({ sessions, onEdit, onAddDate, addingDate }) {
                   {sess.total_tonnage > 0 && ` · ${sess.total_tonnage}kg`}
                 </div>
               </div>
-              <button onClick={() => onEdit(sess.id)} className="ml-3 flex items-center gap-1.5 text-xs text-vesta-red font-medium flex-shrink-0">
-                <Pencil size={13} /> Edit
-              </button>
+              <div className="flex items-center gap-3 ml-3 flex-shrink-0">
+                <button onClick={() => onEdit(sess.id)} className="flex items-center gap-1 text-xs text-vesta-red font-medium">
+                  <Pencil size={13} /> Edit
+                </button>
+                <button onClick={() => onDelete(sess.id)} className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-500 transition-colors">
+                  <Trash2 size={13} />
+                </button>
+              </div>
             </div>
           )
         })}
@@ -121,6 +126,7 @@ export default function Home() {
   const [installPrompt, setInstallPrompt] = useState(null)
   const [iosHintDismissed, setIosHintDismissed] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
+  const [confirmDeletePastId, setConfirmDeletePastId] = useState(null)
 
   const inputRefs = useRef({})
   const today = TODAY()
@@ -362,6 +368,14 @@ export default function Home() {
     setTimeout(() => setNotesSaved(false), 2000)
   }
 
+  async function deletePastSession(sessId) {
+    const { error } = await supabase.from('sessions').delete().eq('id', sessId)
+    if (error) { showToast('Could not delete session — try again', 'error'); return }
+    setPastSessions(prev => prev.filter(s => s.id !== sessId))
+    setConfirmDeletePastId(null)
+    showToast('Session deleted')
+  }
+
   async function handleAddDate(date) {
     setAddingDate(true)
     try {
@@ -437,7 +451,7 @@ export default function Home() {
           <ul className="space-y-1">{exerciseOrder.filter(seId => prBadges[seId]).map(seId => <li key={seId} className="text-slate-900 text-sm">{exerciseMap[seId]?.exercise?.name}</li>)}</ul>
         </div>
       )}
-      <PastSessionsList sessions={pastSessions} onEdit={id => navigate(`/athlete/session/${id}`)} onAddDate={handleAddDate} addingDate={addingDate} />
+      <PastSessionsList sessions={pastSessions} onEdit={id => navigate(`/athlete/session/${id}`)} onDelete={id => setConfirmDeletePastId(id)} onAddDate={handleAddDate} addingDate={addingDate} />
     </div>
   )
 
@@ -633,7 +647,15 @@ export default function Home() {
         </button>
       )}
 
-      <PastSessionsList sessions={pastSessions} onEdit={id => navigate(`/athlete/session/${id}`)} onAddDate={handleAddDate} addingDate={addingDate} />
+      <PastSessionsList sessions={pastSessions} onEdit={id => navigate(`/athlete/session/${id}`)} onDelete={id => setConfirmDeletePastId(id)} onAddDate={handleAddDate} addingDate={addingDate} />
+
+      <Modal open={!!confirmDeletePastId} onClose={() => setConfirmDeletePastId(null)} title="Delete session?">
+        <p className="text-slate-500 text-sm mb-5">This will permanently delete this session and all its logged sets. This can't be undone.</p>
+        <div className="flex gap-3">
+          <button onClick={() => setConfirmDeletePastId(null)} className="flex-1 py-3 rounded-xl text-sm font-medium bg-slate-100 text-slate-600 transition-colors">Cancel</button>
+          <button onClick={() => deletePastSession(confirmDeletePastId)} className="flex-1 py-3 rounded-xl text-sm font-bold bg-red-500 text-white transition-colors">Delete</button>
+        </div>
+      </Modal>
 
       <Modal open={!!confirmDeleteId} onClose={() => setConfirmDeleteId(null)} title="Remove exercise?">
         <p className="text-slate-500 text-sm mb-5">
