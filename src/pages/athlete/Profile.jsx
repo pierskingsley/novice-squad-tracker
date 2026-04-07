@@ -19,6 +19,7 @@ export default function Profile() {
       .from('personal_bests')
       .select('weight, reps, achieved_at, exercises(name)')
       .eq('athlete_id', user.id)
+      .not('set_id', 'is', null)
       .order('weight', { ascending: false })
     setPbs(data || [])
     setLoading(false)
