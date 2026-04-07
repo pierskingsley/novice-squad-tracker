@@ -9,6 +9,19 @@ import SwipeToDelete from '../../components/ui/SwipeToDelete'
 import { useToast } from '../../context/ToastContext'
 import { usePullToRefresh } from '../../hooks/usePullToRefresh'
 import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, Zap, Pencil, CalendarPlus, Trash2, Share, X, Download, RotateCcw } from 'lucide-react'
+import confetti from 'canvas-confetti'
+
+const CHARLOTTE_EXERCISE = "Charlotte Clover's Special Deadlift"
+
+function fireConfetti() {
+  confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#C8102E', '#003087', '#ffffff', '#FFD700'] })
+}
+
+function fireTonneClub() {
+  confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 }, colors: ['#C8102E', '#003087', '#FFD700'] })
+  setTimeout(() => confetti({ particleCount: 100, angle: 60, spread: 60, origin: { x: 0, y: 0.6 } }), 200)
+  setTimeout(() => confetti({ particleCount: 100, angle: 120, spread: 60, origin: { x: 1, y: 0.6 } }), 200)
+}
 
 function PastSessionsList({ sessions, onEdit, onDelete, onAddDate, addingDate }) {
   const [pickedDate, setPickedDate] = useState('')
@@ -334,6 +347,7 @@ export default function Home() {
           isPR = true
           showToast(`🏆 New PR — ${exData.exercise.name}!`, 'pr')
         }
+        if (exData.exercise.name === CHARLOTTE_EXERCISE) fireConfetti()
       }
       if (!isPR) showToast('Set logged')
     } catch (err) { console.error('Error logging set:', err) }
@@ -392,6 +406,7 @@ export default function Home() {
     try {
       await supabase.from('sessions').update({ completed_at: new Date().toISOString(), total_tonnage: totalTonnage }).eq('id', session.id)
       if (navigator.vibrate) navigator.vibrate([30, 50, 30])
+      if (totalTonnage >= 1000) setTimeout(fireTonneClub, 300)
       setFinished(true); setShowFinish(false)
       showToast('Session complete 🎉')
     } catch (err) { setError(err.message) }
@@ -444,6 +459,12 @@ export default function Home() {
           <div><div className="text-2xl font-bold text-slate-900">{exerciseOrder.length}</div><div className="text-xs text-slate-400 mt-0.5">Exercises</div></div>
         </div>
       </div>
+      {totalTonnage >= 1000 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4">
+          <div className="flex items-center gap-2 mb-1"><span className="text-xl">🏋️</span><span className="text-amber-800 font-bold text-sm">Tonne Club</span></div>
+          <p className="text-amber-700 text-xs">You moved over a tonne today. That's elite.</p>
+        </div>
+      )}
       {prCount > 0 && (
         <div className="bg-vesta-red/5 border border-vesta-red/20 rounded-2xl p-4 mb-4">
           <div className="flex items-center gap-2 mb-2"><Trophy size={16} className="text-vesta-red" /><span className="text-vesta-red font-semibold text-sm">Personal Records</span></div>

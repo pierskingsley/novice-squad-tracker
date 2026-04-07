@@ -361,6 +361,7 @@ insert into public.exercises (name, category) values
   ('Romanian Deadlift',                  'compound'),
   ('Charlotte Clover''s Special Deadlift', 'compound'),
   ('Overhead Press',                     'compound'),
+  ('Zoe''s Overhead Press',              'compound'),
   ('Front Squat',                        'compound'),
   ('Back Squat',                         'compound'),
   ('Goblet Squat',                       'compound'),

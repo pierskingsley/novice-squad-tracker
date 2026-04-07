@@ -8,6 +8,12 @@ import SwipeToDelete from '../../components/ui/SwipeToDelete'
 import { useToast } from '../../context/ToastContext'
 import { usePullToRefresh } from '../../hooks/usePullToRefresh'
 import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, ArrowLeft, Trash2, X, RotateCcw } from 'lucide-react'
+import confetti from 'canvas-confetti'
+
+const CHARLOTTE_EXERCISE = "Charlotte Clover's Special Deadlift"
+function fireConfetti() {
+  confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#C8102E', '#003087', '#ffffff', '#FFD700'] })
+}
 
 const CATEGORY_LABELS = { compound: 'Compounds', accessory: 'Accessory', core: 'Core' }
 const CATEGORY_ORDER = ['compound', 'accessory', 'core']
@@ -206,6 +212,7 @@ export default function SessionEdit() {
           isPR = true
           showToast(`🏆 New PR — ${exData.exercise.name}!`, 'pr')
         }
+        if (exData.exercise.name === CHARLOTTE_EXERCISE) fireConfetti()
       }
       if (!isPR) showToast('Set logged')
     } catch (err) { console.error('Error logging set:', err) }
