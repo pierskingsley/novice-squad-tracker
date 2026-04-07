@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Dumbbell, History, TrendingUp, User, ClipboardList, Users } from 'lucide-react'
+import { Dumbbell, History, TrendingUp, User, ClipboardList, Users, LogOut } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { ROLES } from '../../lib/constants'
 
@@ -16,8 +16,9 @@ const COACH_TABS = [
 ]
 
 export default function BottomNav() {
-  const { profile } = useAuth()
-  const tabs = profile?.role === ROLES.COACH ? COACH_TABS : ATHLETE_TABS
+  const { profile, signOut } = useAuth()
+  const isCoach = profile?.role === ROLES.COACH
+  const tabs = isCoach ? COACH_TABS : ATHLETE_TABS
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 safe-bottom">
@@ -36,6 +37,15 @@ export default function BottomNav() {
             {label}
           </NavLink>
         ))}
+        {isCoach && (
+          <button
+            onClick={signOut}
+            className="flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium text-slate-400 hover:text-red-500 transition-colors"
+          >
+            <LogOut size={22} strokeWidth={1.75} />
+            Sign out
+          </button>
+        )}
       </div>
     </nav>
   )
