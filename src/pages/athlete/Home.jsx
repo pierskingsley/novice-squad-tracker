@@ -10,6 +10,7 @@ import { useToast } from '../../context/ToastContext'
 import { usePullToRefresh } from '../../hooks/usePullToRefresh'
 import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, Zap, Pencil, CalendarPlus, Trash2, Share, X, Download, RotateCcw } from 'lucide-react'
 import confetti from 'canvas-confetti'
+import ZoeCelebration from '../../components/ui/ZoeCelebration'
 
 const CHARLOTTE_EXERCISE = "Charlotte Clover's Special Deadlift"
 const ZOE_EXERCISE = "Zoe's Overhead Press"
@@ -141,6 +142,7 @@ export default function Home() {
   const [iosHintDismissed, setIosHintDismissed] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [confirmDeletePastId, setConfirmDeletePastId] = useState(null)
+  const [showZoe, setShowZoe] = useState(false)
 
   const inputRefs = useRef({})
   const today = TODAY()
@@ -349,10 +351,7 @@ export default function Home() {
           showToast(`🏆 New PR — ${exData.exercise.name}!`, 'pr')
         }
         if (exData.exercise.name === CHARLOTTE_EXERCISE) fireConfetti()
-        if (exData.exercise.name === ZOE_EXERCISE) {
-          showToast('Wow, du bist so stark! 💪', 'german')
-          if (navigator.vibrate) navigator.vibrate([40, 30, 40, 30, 80])
-        }
+        if (exData.exercise.name === ZOE_EXERCISE) setShowZoe(true)
       }
       if (!isPR) showToast('Set logged')
     } catch (err) { console.error('Error logging set:', err) }
@@ -713,6 +712,7 @@ export default function Home() {
           </button>
         </div>
       </Modal>
+      {showZoe && <ZoeCelebration onDismiss={() => setShowZoe(false)} />}
     </div>
   )
 }

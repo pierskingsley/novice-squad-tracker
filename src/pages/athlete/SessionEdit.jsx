@@ -9,6 +9,7 @@ import { useToast } from '../../context/ToastContext'
 import { usePullToRefresh } from '../../hooks/usePullToRefresh'
 import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, ArrowLeft, Trash2, X, RotateCcw } from 'lucide-react'
 import confetti from 'canvas-confetti'
+import ZoeCelebration from '../../components/ui/ZoeCelebration'
 
 const CHARLOTTE_EXERCISE = "Charlotte Clover's Special Deadlift"
 const ZOE_EXERCISE = "Zoe's Overhead Press"
@@ -76,6 +77,7 @@ export default function SessionEdit() {
   const [notesSaved, setNotesSaved] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [finishing, setFinishing] = useState(false)
+  const [showZoe, setShowZoe] = useState(false)
 
   const inputRefs = useRef({})
 
@@ -214,10 +216,7 @@ export default function SessionEdit() {
           showToast(`🏆 New PR — ${exData.exercise.name}!`, 'pr')
         }
         if (exData.exercise.name === CHARLOTTE_EXERCISE) fireConfetti()
-        if (exData.exercise.name === ZOE_EXERCISE) {
-          showToast('Wow, du bist so stark! 💪', 'german')
-          if (navigator.vibrate) navigator.vibrate([40, 30, 40, 30, 80])
-        }
+        if (exData.exercise.name === ZOE_EXERCISE) setShowZoe(true)
       }
       if (!isPR) showToast('Set logged')
     } catch (err) { console.error('Error logging set:', err) }
@@ -466,6 +465,7 @@ export default function SessionEdit() {
           <button onClick={() => deleteExercise(confirmDeleteId)} className="flex-1 py-3 rounded-xl text-sm font-bold bg-red-500 hover:bg-red-600 text-white transition-colors">Remove</button>
         </div>
       </Modal>
+      {showZoe && <ZoeCelebration onDismiss={() => setShowZoe(false)} />}
     </div>
   )
 }
