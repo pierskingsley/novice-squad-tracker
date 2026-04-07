@@ -63,7 +63,7 @@ function PastSessionsList({ sessions, onEdit, onAddDate, addingDate }) {
 }
 
 export default function Home() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const navigate = useNavigate()
 
   const [session, setSession] = useState(null)
@@ -77,6 +77,7 @@ export default function Home() {
   const [setCount, setSetCount] = useState({})
   const [expanded, setExpanded] = useState({})
   const [prBadges, setPrBadges] = useState({})
+  const [prevSets, setPrevSets] = useState({})
   const [totalTonnage, setTotalTonnage] = useState(0)
   const [loading, setLoading] = useState(true)
   const [savingSet, setSavingSet] = useState({})
@@ -86,6 +87,8 @@ export default function Home() {
   const [error, setError] = useState('')
   const [pastSessions, setPastSessions] = useState([])
   const [addingDate, setAddingDate] = useState(false)
+  const [notes, setNotes] = useState('')
+  const [savingNotes, setSavingNotes] = useState(false)
 
   const today = TODAY()
 
@@ -121,8 +124,10 @@ export default function Home() {
       setPastSessions(past || [])
       if (!existingSess) { setLoading(false); return }
       setSession(existingSess)
+      setNotes(existingSess.notes || '')
       if (existingSess.completed_at) setFinished(true)
-      await loadSessionExercises(existingSess.id)
+      const pastIds = (past || []).map(s => s.id)
+      await loadSessionExercises(existingSess.id, pastIds)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -130,12 +135,39 @@ export default function Home() {
     }
   }
 
-  async function loadSessionExercises(sessionId) {
+  async function fetchLastTimeSets(exerciseIds, pastSessionIds) {
+    if (!exerciseIds.length || !pastSessionIds.length) return {}
+    const { data: prevSERows } = await supabase
+      .from('session_exercises').select('id, exercise_id, session_id')
+      .in('exercise_id', exerciseIds).in('session_id', pastSessionIds)
+    if (!prevSERows?.length) return {}
+    const latestSEByExercise = {}
+    for (const exId of exerciseIds) {
+      const matches = prevSERows.filter(r => r.exercise_id === exId)
+      if (!matches.length) continue
+      matches.sort((a, b) => pastSessionIds.indexOf(a.session_id) - pastSessionIds.indexOf(b.session_id))
+      latestSEByExercise[exId] = matches[0]
+    }
+    const prevSEIds = Object.values(latestSEByExercise).map(r => r.id)
+    if (!prevSEIds.length) return {}
+    const { data: prevSetRows } = await supabase.from('sets').select('*').in('session_exercise_id', prevSEIds)
+    const result = {}
+    for (const [exId, seRow] of Object.entries(latestSEByExercise)) {
+      result[exId] = (prevSetRows || []).filter(s => s.session_exercise_id === seRow.id).sort((a, b) => a.set_number - b.set_number)
+    }
+    return result
+  }
+
+  async function loadSessionExercises(sessionId, pastSessionIds = []) {
     const { data: seRows } = await supabase
       .from('session_exercises').select('*, exercises(id, name)').eq('session_id', sessionId).order('order_index')
     if (!seRows || seRows.length === 0) return
     const seIds = seRows.map(s => s.id)
-    const { data: existingSets } = await supabase.from('sets').select('*').in('session_exercise_id', seIds)
+    const exerciseIds = seRows.map(s => s.exercise_id)
+    const [{ data: existingSets }, lastTime] = await Promise.all([
+      supabase.from('sets').select('*').in('session_exercise_id', seIds),
+      fetchLastTimeSets(exerciseIds, pastSessionIds),
+    ])
     const newExMap = {}, newExOrder = [], newInputs = {}, newSaved = {}, newSetCount = {}, newExpanded = {}
     for (const se of seRows) {
       newExMap[se.id] = { sessionExercise: se, exercise: se.exercises }
@@ -154,6 +186,7 @@ export default function Home() {
     }
     setExerciseMap(newExMap); setExerciseOrder(newExOrder); setInputs(newInputs)
     setSavedSets(newSaved); setSetCount(newSetCount); setExpanded(newExpanded)
+    setPrevSets(lastTime)
     recalcTonnage(newSaved)
   }
 
@@ -180,6 +213,10 @@ export default function Home() {
       setSavedSets(prev => ({ ...prev, [seId]: { 1: null, 2: null, 3: null } }))
       setInputs(prev => ({ ...prev, [seId]: { 1: { weight: '', reps: '' }, 2: { weight: '', reps: '' }, 3: { weight: '', reps: '' } } }))
       setSelectedExerciseId('')
+      const pastIds = pastSessions.map(s => s.id)
+      fetchLastTimeSets([selectedExerciseId], pastIds).then(lt => {
+        if (lt[selectedExerciseId]) setPrevSets(prev => ({ ...prev, [selectedExerciseId]: lt[selectedExerciseId] }))
+      })
     } catch (err) { setError(err.message) }
     finally { setAddingExercise(false) }
   }
@@ -245,6 +282,13 @@ export default function Home() {
     finally { setAddingDate(false) }
   }
 
+  async function saveNotes() {
+    if (!session) return
+    setSavingNotes(true)
+    await supabase.from('sessions').update({ notes }).eq('id', session.id)
+    setSavingNotes(false)
+  }
+
   async function finishSession() {
     setFinishing(true)
     try {
@@ -299,7 +343,10 @@ export default function Home() {
     <div className="px-4 pt-6 pb-28">
       <div className="mb-5">
         <p className="text-xs text-slate-400 uppercase tracking-wider font-medium mb-0.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-        <h1 className="text-2xl font-bold text-slate-900">Today's session</h1>
+        {profile?.name
+          ? <h1 className="text-2xl font-bold text-slate-900">Welcome back, {profile.name.split(' ')[0]}</h1>
+          : <h1 className="text-2xl font-bold text-slate-900">Today's session</h1>
+        }
       </div>
 
       {exerciseOrder.length > 0 && (
@@ -353,16 +400,33 @@ export default function Home() {
           const setNums = Array.from({ length: numSets }, (_, i) => i + 1)
           const isExpanded = expanded[seId] ?? true
           const isPR = prBadges[seId]
+          const last = prevSets[exercise.id] || []
+          const lastWeights = last.map(s => s.weight).filter(Boolean)
+          const allLastCompleted = last.length > 0 && last.every(s => s.weight && s.reps)
+          const suggestedWeight = allLastCompleted ? Math.max(...lastWeights) + 2.5 : null
           return (
             <div key={seId} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
               <button onClick={() => setExpanded(prev => ({ ...prev, [seId]: !prev[seId] }))}
                 className="w-full px-4 pt-4 pb-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-base font-semibold text-slate-900">{exercise.name}</span>
                   {isPR && <span className="flex items-center gap-1 bg-vesta-red text-white text-xs font-bold px-2 py-0.5 rounded-full"><Trophy size={10} /> PR</span>}
                 </div>
-                <div className="text-slate-400">{isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</div>
+                <div className="text-slate-400 flex-shrink-0">{isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</div>
               </button>
+              {last.length > 0 && (
+                <div className="px-4 pb-2 flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-slate-400">Last time:</span>
+                  {last.map((s, i) => (
+                    <span key={i} className="text-xs bg-slate-100 text-slate-500 rounded-md px-1.5 py-0.5">{s.weight}kg×{s.reps}</span>
+                  ))}
+                  {suggestedWeight && (
+                    <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-md px-1.5 py-0.5 font-medium">
+                      Try {suggestedWeight}kg ↑
+                    </span>
+                  )}
+                </div>
+              )}
               {isExpanded && (
                 <div className="px-4 pb-4 space-y-3">
                   <div className="grid grid-cols-[32px_1fr_1fr_44px] gap-2 px-1">
@@ -401,6 +465,21 @@ export default function Home() {
           )
         })}
       </div>
+
+      {session && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 mt-4 shadow-sm">
+          <p className="text-xs font-medium text-slate-500 mb-2">Session notes</p>
+          <textarea
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            onBlur={saveNotes}
+            placeholder="How did the session feel? Any notes for your coach..."
+            rows={3}
+            className="w-full bg-slate-100 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-vesta-red/40 resize-none transition-all"
+          />
+          {savingNotes && <p className="text-xs text-slate-400 mt-1">Saving...</p>}
+        </div>
+      )}
 
       {exerciseOrder.length > 0 && (
         <button onClick={() => setShowFinish(true)}

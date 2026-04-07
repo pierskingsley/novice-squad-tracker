@@ -20,7 +20,7 @@ export default function AthleteDetail() {
     const [{ data: profile }, { data: sessData }, { data: pbData }] = await Promise.all([
       supabase.from('profiles').select('id, name').eq('id', id).single(),
       supabase.from('sessions')
-        .select('id, date, completed_at, total_tonnage, programme_assignments (programmes (name)), session_exercises (id, order_index, exercises (name), sets (id, set_number, weight, reps))')
+        .select('id, date, completed_at, total_tonnage, notes, programme_assignments (programmes (name)), session_exercises (id, order_index, exercises (name), sets (id, set_number, weight, reps))')
         .eq('athlete_id', id).not('completed_at', 'is', null).order('date', { ascending: false }).limit(20),
       supabase.from('personal_bests').select('weight, reps, achieved_at, exercises(name)').eq('athlete_id', id).order('weight', { ascending: false }),
     ])
@@ -115,6 +115,12 @@ export default function AthleteDetail() {
                 </button>
                 {isOpen && (
                   <div className="border-t border-slate-100 divide-y divide-slate-100">
+                    {sess.notes && (
+                      <div className="px-4 py-3 bg-amber-50/60">
+                        <p className="text-xs font-medium text-amber-700 mb-0.5">Athlete notes</p>
+                        <p className="text-sm text-slate-700">{sess.notes}</p>
+                      </div>
+                    )}
                     {orderedExercises.map(se => {
                       const sortedSets = (se.sets || []).sort((a, b) => a.set_number - b.set_number)
                       return (

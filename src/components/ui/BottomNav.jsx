@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Dumbbell, History, TrendingUp, User, ClipboardList, Users, LogOut } from 'lucide-react'
+import { Dumbbell, History, TrendingUp, User, ClipboardList, Users, LogOut, LayoutGrid } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { ROLES } from '../../lib/constants'
 
@@ -13,6 +13,7 @@ const ATHLETE_TABS = [
 const COACH_TABS = [
   { to: '/coach/programmes', icon: ClipboardList, label: 'Programmes' },
   { to: '/coach/squad', icon: Users, label: 'Squad' },
+  { to: '/coach/heatmap', icon: LayoutGrid, label: 'Heatmap' },
 ]
 
 export default function BottomNav() {

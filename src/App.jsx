@@ -12,6 +12,7 @@ import Programmes from './pages/coach/Programmes'
 import ProgrammeBuilder from './pages/coach/ProgrammeBuilder'
 import Squad from './pages/coach/Squad'
 import AthleteDetail from './pages/coach/AthleteDetail'
+import Heatmap from './pages/coach/Heatmap'
 import { ROLES } from './lib/constants'
 
 function ProtectedRoute({ children, role }) {
@@ -68,6 +69,7 @@ function AppRoutes() {
         <Route path="programmes/:id/edit" element={<ProgrammeBuilder />} />
         <Route path="squad" element={<Squad />} />
         <Route path="squad/:id" element={<AthleteDetail />} />
+        <Route path="heatmap" element={<Heatmap />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

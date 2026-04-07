@@ -25,6 +25,8 @@ export default function SessionEdit() {
   const [loading, setLoading] = useState(true)
   const [savingSet, setSavingSet] = useState({})
   const [error, setError] = useState('')
+  const [notes, setNotes] = useState('')
+  const [savingNotes, setSavingNotes] = useState(false)
 
   const recalcTonnage = useCallback((savedSetsSnapshot) => {
     let total = 0
@@ -48,7 +50,7 @@ export default function SessionEdit() {
         supabase.from('exercises').select('id, name, category').order('name'),
       ])
       if (se) throw se
-      setSession(sess); setAllExercises(exList || [])
+      setSession(sess); setNotes(sess?.notes || ''); setAllExercises(exList || [])
       // Auto-complete past sessions so they count in history
       if (sess && !sess.completed_at && sess.date < new Date().toISOString().split('T')[0]) {
         supabase.from('sessions').update({ completed_at: `${sess.date}T23:59:59.000Z` }).eq('id', sess.id)
@@ -143,6 +145,13 @@ export default function SessionEdit() {
     finally { setSavingSet(prev => ({ ...prev, [key]: false })) }
   }
 
+  async function saveNotes() {
+    if (!session) return
+    setSavingNotes(true)
+    await supabase.from('sessions').update({ notes }).eq('id', session.id)
+    setSavingNotes(false)
+  }
+
   if (loading) return <div className="flex items-center justify-center min-h-screen"><Spinner size="lg" /></div>
 
   if (error) return (
@@ -202,6 +211,19 @@ export default function SessionEdit() {
             {addingExercise ? <Spinner size="sm" /> : <Plus size={16} />} Add
           </button>
         </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-4 shadow-sm">
+        <p className="text-xs font-medium text-slate-500 mb-2">Session notes</p>
+        <textarea
+          value={notes}
+          onChange={e => setNotes(e.target.value)}
+          onBlur={saveNotes}
+          placeholder="How did the session feel? Any notes for your coach..."
+          rows={3}
+          className="w-full bg-slate-100 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-vesta-red/40 resize-none transition-all"
+        />
+        {savingNotes && <p className="text-xs text-slate-400 mt-1">Saving...</p>}
       </div>
 
       <div className="space-y-3">
