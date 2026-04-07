@@ -66,6 +66,7 @@ export default function SessionEdit() {
   const [notes, setNotes] = useState('')
   const [savingNotes, setSavingNotes] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
+  const [finishing, setFinishing] = useState(false)
 
   const inputRefs = useRef({})
 
@@ -223,15 +224,17 @@ export default function SessionEdit() {
   }
 
   async function markComplete() {
+    setFinishing(true)
     const completedAt = session.date < new Date().toISOString().split('T')[0]
       ? `${session.date}T23:59:59.000Z`
       : new Date().toISOString()
     const { error } = await supabase.from('sessions')
       .update({ completed_at: completedAt, total_tonnage: totalTonnage })
       .eq('id', session.id)
+    setFinishing(false)
     if (error) { showToast('Could not mark complete — try again', 'error'); return }
     setSession(prev => ({ ...prev, completed_at: completedAt }))
-    showToast('Session marked as complete')
+    showToast('Session complete!')
   }
 
   async function saveNotes() {
@@ -297,12 +300,8 @@ export default function SessionEdit() {
       )}
 
       {session && !session.completed_at && (
-        <div className="bg-vesta-navy/5 border border-vesta-navy/20 rounded-2xl px-4 py-3 mb-4 flex items-center justify-between gap-3">
+        <div className="bg-vesta-navy/5 border border-vesta-navy/20 rounded-2xl px-4 py-3 mb-4">
           <p className="text-xs text-slate-600">Session not yet marked complete — it won't show in History.</p>
-          <button onClick={markComplete}
-            className="flex-shrink-0 bg-vesta-navy text-white text-xs font-semibold px-3 py-2 rounded-xl transition-colors active:opacity-80">
-            Mark complete
-          </button>
         </div>
       )}
 
@@ -419,6 +418,17 @@ export default function SessionEdit() {
           )
         })}
       </div>
+
+      {session && !session.completed_at && exerciseOrder.length > 0 && (
+        <button
+          onClick={markComplete}
+          disabled={finishing}
+          className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-vesta-red text-white font-bold text-sm px-8 py-3.5 rounded-2xl shadow-lg active:opacity-80 transition-all disabled:opacity-60 flex items-center gap-2 whitespace-nowrap z-10"
+        >
+          {finishing ? <Spinner size="sm" /> : <CheckCircle2 size={16} />}
+          Finish session
+        </button>
+      )}
 
       <Modal open={!!confirmDeleteId} onClose={() => setConfirmDeleteId(null)} title="Remove exercise?">
         <p className="text-slate-500 text-sm mb-5">
