@@ -619,7 +619,8 @@ export default function Home() {
                     const isSaving = savingSet[`${seId}-${n}`]
                     const inp = inputs[seId]?.[n] || { weight: '', reps: '' }
                     return (
-                      <div key={n} className="grid grid-cols-[32px_1fr_1fr_44px_24px] gap-2 items-center py-0.5">
+                      <SwipeToDelete key={n} onDelete={() => deleteSet(seId, n)} disabled={isSaving} silent>
+                      <div className="grid grid-cols-[32px_1fr_1fr_44px_24px] gap-2 items-center py-0.5">
                         <span className="text-xs font-mono text-center">
                           {isSaved ? <CheckCircle2 size={14} className="mx-auto text-vesta-red" /> : <span className="text-slate-400">{n}</span>}
                         </span>
@@ -643,6 +644,7 @@ export default function Home() {
                           <Trash2 size={13} />
                         </button>
                       </div>
+                      </SwipeToDelete>
                     )
                   })}
 

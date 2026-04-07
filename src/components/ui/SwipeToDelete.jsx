@@ -4,7 +4,7 @@ import { Trash2 } from 'lucide-react'
 const SNAP_THRESHOLD = 40   // px to pass before snapping open
 const SNAP_WIDTH = 72       // px width of delete zone
 
-export default function SwipeToDelete({ onDelete, children, disabled = false }) {
+export default function SwipeToDelete({ onDelete, children, disabled = false, silent = false }) {
   const [offset, setOffset] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -76,16 +76,20 @@ export default function SwipeToDelete({ onDelete, children, disabled = false }) 
   return (
     <div className="relative overflow-hidden rounded-lg select-none">
       {/* Delete zone behind */}
-      <div className="absolute inset-y-0 right-0 flex items-center justify-center bg-red-500 rounded-lg"
-        style={{ width: SNAP_WIDTH }}>
-        <button
-          onClick={handleDelete}
-          disabled={deleting}
-          className="w-full h-full flex items-center justify-center active:bg-red-600 transition-colors"
-        >
-          <Trash2 size={16} className="text-white" />
-        </button>
-      </div>
+      {silent ? (
+        <div className="absolute inset-y-0 right-0" style={{ width: SNAP_WIDTH }} onClick={handleDelete} />
+      ) : (
+        <div className="absolute inset-y-0 right-0 flex items-center justify-center bg-red-500 rounded-lg"
+          style={{ width: SNAP_WIDTH }}>
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="w-full h-full flex items-center justify-center active:bg-red-600 transition-colors"
+          >
+            <Trash2 size={16} className="text-white" />
+          </button>
+        </div>
+      )}
 
       {/* Swipeable content */}
       <div
