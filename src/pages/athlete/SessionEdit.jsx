@@ -213,9 +213,8 @@ export default function SessionEdit() {
   }
 
   async function deleteExercise(seId) {
-    const { error: e1 } = await supabase.from('sets').delete().eq('session_exercise_id', seId)
-    const { error: e2 } = await supabase.from('session_exercises').delete().eq('id', seId)
-    if (e1 || e2) {
+    const { error } = await supabase.from('session_exercises').delete().eq('id', seId)
+    if (error) {
       showToast('Failed to remove exercise — try again', 'error')
       setConfirmDeleteId(null)
       return

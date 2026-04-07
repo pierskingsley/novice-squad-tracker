@@ -341,9 +341,8 @@ export default function Home() {
   }
 
   async function deleteExercise(seId) {
-    const { error: e1 } = await supabase.from('sets').delete().eq('session_exercise_id', seId)
-    const { error: e2 } = await supabase.from('session_exercises').delete().eq('id', seId)
-    if (e1 || e2) {
+    const { error } = await supabase.from('session_exercises').delete().eq('id', seId)
+    if (error) {
       showToast('Failed to remove exercise — try again', 'error')
       setConfirmDeleteId(null)
       return
@@ -452,6 +451,14 @@ export default function Home() {
         </div>
       )}
       <PastSessionsList sessions={pastSessions} onEdit={id => navigate(`/athlete/session/${id}`)} onDelete={id => setConfirmDeletePastId(id)} onAddDate={handleAddDate} addingDate={addingDate} />
+
+      <Modal open={!!confirmDeletePastId} onClose={() => setConfirmDeletePastId(null)} title="Delete session?">
+        <p className="text-slate-500 text-sm mb-5">This will permanently delete this session and all its logged sets. This can't be undone.</p>
+        <div className="flex gap-3">
+          <button onClick={() => setConfirmDeletePastId(null)} className="flex-1 py-3 rounded-xl text-sm font-medium bg-slate-100 text-slate-600 transition-colors">Cancel</button>
+          <button onClick={() => deletePastSession(confirmDeletePastId)} className="flex-1 py-3 rounded-xl text-sm font-bold bg-red-500 text-white transition-colors">Delete</button>
+        </div>
+      </Modal>
     </div>
   )
 
