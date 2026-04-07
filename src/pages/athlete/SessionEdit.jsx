@@ -272,7 +272,7 @@ export default function SessionEdit() {
       </div>
 
       <div className="space-y-3">
-        {exerciseOrder.map(seId => {
+        {[...exerciseOrder].reverse().map(seId => {
           const { exercise } = exerciseMap[seId] || {}
           if (!exercise) return null
           const numSets = setCount[seId] || 3
