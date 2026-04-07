@@ -21,7 +21,7 @@ export default function AthleteDetail() {
       supabase.from('profiles').select('id, name').eq('id', id).single(),
       supabase.from('sessions')
         .select('id, date, completed_at, total_tonnage, notes, programme_assignments (programmes (name)), session_exercises (id, order_index, exercises (name), sets (id, set_number, weight, reps))')
-        .eq('athlete_id', id).not('completed_at', 'is', null).order('date', { ascending: false }).limit(20),
+        .eq('athlete_id', id).or(`completed_at.not.is.null,date.lt.${new Date().toISOString().split('T')[0]}`).order('date', { ascending: false }).limit(20),
       supabase.from('personal_bests').select('weight, reps, achieved_at, exercises(name)').eq('athlete_id', id).order('weight', { ascending: false }),
     ])
     setAthlete(profile); setSessions(sessData || []); setPbs(pbData || [])

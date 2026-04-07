@@ -83,15 +83,19 @@ export default function SessionEdit() {
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const [{ data: sess, error: se }, { data: exList }] = await Promise.all([
+      const [{ data: sessData, error: se }, { data: exList }] = await Promise.all([
         supabase.from('sessions').select('*').eq('id', id).eq('athlete_id', user.id).single(),
         supabase.from('exercises').select('id, name, category').order('name'),
       ])
       if (se) throw se
-      setSession(sess); setNotes(sess?.notes || ''); setAllExercises(exList || [])
+      let sess = sessData
+      setAllExercises(exList || [])
       if (sess && !sess.completed_at && sess.date < new Date().toISOString().split('T')[0]) {
-        supabase.from('sessions').update({ completed_at: `${sess.date}T23:59:59.000Z` }).eq('id', sess.id)
+        const completedAt = `${sess.date}T23:59:59.000Z`
+        await supabase.from('sessions').update({ completed_at: completedAt }).eq('id', sess.id)
+        sess = { ...sess, completed_at: completedAt }
       }
+      setSession(sess); setNotes(sess?.notes || '')
       const { data: seRows } = await supabase.from('session_exercises').select('*, exercises(id, name)').eq('session_id', id).order('order_index')
       if (!seRows || seRows.length === 0) { setLoading(false); return }
       const seIds = seRows.map(s => s.id)

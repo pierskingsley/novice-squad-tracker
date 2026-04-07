@@ -17,7 +17,8 @@ export default function Squad() {
     const ids = (data || []).map(a => a.id)
     let sessionCounts = {}
     if (ids.length > 0) {
-      const { data: sessions } = await supabase.from('sessions').select('athlete_id').in('athlete_id', ids).not('completed_at', 'is', null)
+      const today = new Date().toISOString().split('T')[0]
+      const { data: sessions } = await supabase.from('sessions').select('athlete_id').in('athlete_id', ids).or(`completed_at.not.is.null,date.lt.${today}`)
       for (const s of sessions || []) { sessionCounts[s.athlete_id] = (sessionCounts[s.athlete_id] || 0) + 1 }
     }
     setAthletes((data || []).map(a => ({ ...a, sessionCount: sessionCounts[a.id] || 0 })))
