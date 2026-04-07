@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext'
 import { TODAY } from '../../lib/constants'
 import Spinner from '../../components/ui/Spinner'
 import Modal from '../../components/ui/Modal'
-import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, Zap, Pencil, CalendarPlus } from 'lucide-react'
+import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, Zap, Pencil, CalendarPlus, Trash2, Download } from 'lucide-react'
 
 function PastSessionsList({ sessions, onEdit, onAddDate, addingDate }) {
   const [pickedDate, setPickedDate] = useState('')
@@ -89,6 +89,7 @@ export default function Home() {
   const [addingDate, setAddingDate] = useState(false)
   const [notes, setNotes] = useState('')
   const [savingNotes, setSavingNotes] = useState(false)
+  const [installPrompt, setInstallPrompt] = useState(null)
 
   const today = TODAY()
 
@@ -105,6 +106,19 @@ export default function Home() {
   useEffect(() => {
     if (user) load()
   }, [user])
+
+  useEffect(() => {
+    const handler = (e) => { e.preventDefault(); setInstallPrompt(e) }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  async function handleInstall() {
+    if (!installPrompt) return
+    installPrompt.prompt()
+    const { outcome } = await installPrompt.userChoice
+    if (outcome === 'accepted') setInstallPrompt(null)
+  }
 
   async function load() {
     setLoading(true)
@@ -282,6 +296,17 @@ export default function Home() {
     finally { setAddingDate(false) }
   }
 
+  async function deleteExercise(seId) {
+    await supabase.from('sets').delete().eq('session_exercise_id', seId)
+    await supabase.from('session_exercises').delete().eq('id', seId)
+    setExerciseOrder(prev => prev.filter(id => id !== seId))
+    setExerciseMap(prev => { const n = { ...prev }; delete n[seId]; return n })
+    setInputs(prev => { const n = { ...prev }; delete n[seId]; return n })
+    setExpanded(prev => { const n = { ...prev }; delete n[seId]; return n })
+    setSetCount(prev => { const n = { ...prev }; delete n[seId]; return n })
+    setSavedSets(prev => { const n = { ...prev }; delete n[seId]; recalcTonnage(n); return n })
+  }
+
   async function saveNotes() {
     if (!session) return
     setSavingNotes(true)
@@ -341,12 +366,19 @@ export default function Home() {
 
   return (
     <div className="px-4 pt-6 pb-28">
-      <div className="mb-5">
-        <p className="text-xs text-slate-400 uppercase tracking-wider font-medium mb-0.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-        {profile?.name
-          ? <h1 className="text-2xl font-bold text-slate-900">Welcome back, {profile.name.split(' ')[0]}</h1>
-          : <h1 className="text-2xl font-bold text-slate-900">Today's session</h1>
-        }
+      <div className="flex items-start justify-between mb-5">
+        <div>
+          <p className="text-xs text-slate-400 uppercase tracking-wider font-medium mb-0.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+          <h1 className="text-2xl font-bold text-slate-900">
+            {profile?.name ? `Welcome back, ${profile.name.trim().split(' ')[0]}` : "Today's session"}
+          </h1>
+        </div>
+        {installPrompt && (
+          <button onClick={handleInstall}
+            className="flex items-center gap-1.5 bg-vesta-navy text-white text-xs font-semibold px-3 py-2 rounded-xl shadow-sm flex-shrink-0 mt-1">
+            <Download size={13} /> Add to phone
+          </button>
+        )}
       </div>
 
       {exerciseOrder.length > 0 && (
@@ -406,14 +438,21 @@ export default function Home() {
           const suggestedWeight = allLastCompleted ? Math.max(...lastWeights) + 2.5 : null
           return (
             <div key={seId} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-              <button onClick={() => setExpanded(prev => ({ ...prev, [seId]: !prev[seId] }))}
-                className="w-full px-4 pt-4 pb-3 flex items-center justify-between">
-                <div className="flex items-center gap-2 flex-wrap">
+              <div className="px-4 pt-4 pb-3 flex items-center justify-between">
+                <button onClick={() => setExpanded(prev => ({ ...prev, [seId]: !prev[seId] }))}
+                  className="flex items-center gap-2 flex-wrap flex-1 text-left">
                   <span className="text-base font-semibold text-slate-900">{exercise.name}</span>
                   {isPR && <span className="flex items-center gap-1 bg-vesta-red text-white text-xs font-bold px-2 py-0.5 rounded-full"><Trophy size={10} /> PR</span>}
+                </button>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button onClick={() => deleteExercise(seId)} className="text-slate-300 hover:text-red-400 transition-colors p-1">
+                    <Trash2 size={15} />
+                  </button>
+                  <div className="text-slate-400" onClick={() => setExpanded(prev => ({ ...prev, [seId]: !prev[seId] }))}>
+                    {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                  </div>
                 </div>
-                <div className="text-slate-400 flex-shrink-0">{isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</div>
-              </button>
+              </div>
               {last.length > 0 && (
                 <div className="px-4 pb-2 flex items-center gap-2 flex-wrap">
                   <span className="text-xs text-slate-400">Last time:</span>
