@@ -62,9 +62,12 @@ function PastSessionsList({ sessions, onEdit, onAddDate, addingDate }) {
   )
 }
 
+const CATEGORY_LABELS = { compound: 'Compounds', accessory: 'Accessory', core: 'Core' }
+const CATEGORY_ORDER = ['compound', 'accessory', 'core']
+
 function ExercisePicker({ exercises, onSelect, adding }) {
   const [activeCategory, setActiveCategory] = useState(null)
-  const categories = [...new Set(exercises.map(e => e.category).filter(Boolean))]
+  const categories = CATEGORY_ORDER.filter(c => exercises.some(e => e.category === c))
   const filtered = activeCategory ? exercises.filter(e => e.category === activeCategory) : exercises
 
   return (
@@ -77,8 +80,8 @@ function ExercisePicker({ exercises, onSelect, adding }) {
         {categories.map(cat => (
           <button key={cat}
             onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
-            className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors ${activeCategory === cat ? 'bg-vesta-red text-white' : 'bg-slate-100 text-slate-500'}`}
-          >{cat}</button>
+            className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${activeCategory === cat ? 'bg-vesta-red text-white' : 'bg-slate-100 text-slate-500'}`}
+          >{CATEGORY_LABELS[cat] ?? cat}</button>
         ))}
       </div>
       <div className="flex flex-wrap gap-2">

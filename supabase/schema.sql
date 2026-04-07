@@ -354,23 +354,22 @@ create policy "personal_bests: coach read all"
 -- ══════════════════════════════════════════════════════════════
 
 insert into public.exercises (name, category) values
-  ('Squat',              'compound'),
-  ('Deadlift',           'compound'),
-  ('Bench Press',        'compound'),
-  ('Overhead Press',     'compound'),
-  ('Barbell Row',        'compound'),
-  ('Romanian Deadlift',  'compound'),
-  ('Leg Press',          'compound'),
-  ('Pull-up',            'compound'),
-  ('Dip',                'compound'),
-  ('Hip Thrust',         'compound'),
-  ('Lat Pulldown',       'accessory'),
-  ('Cable Row',          'accessory'),
-  ('Dumbbell Curl',      'accessory'),
-  ('Tricep Pushdown',    'accessory'),
-  ('Face Pull',          'accessory'),
-  ('Lunges',             'accessory'),
-  ('Leg Curl',           'accessory'),
-  ('Leg Extension',      'accessory'),
-  ('Plank',              'accessory')
-on conflict (name) do nothing;
+  ('Bench Press',                        'compound'),
+  ('Pull Up',                            'compound'),
+  ('Deadlift',                           'compound'),
+  ('Romanian Deadlift',                  'compound'),
+  ('Charlotte Clover''s Special Deadlift', 'compound'),
+  ('Overhead Press',                     'compound'),
+  ('Front Squat',                        'compound'),
+  ('Back Squat',                         'compound'),
+  ('Goblet Squat',                       'compound'),
+  ('Hip Thrust',                         'compound'),
+  ('Barbell Row',                        'compound'),
+  ('Push Up',                            'compound'),
+  ('Bulgarian Split Squat',              'accessory'),
+  ('Bicep Curls',                        'accessory'),
+  ('Plank',                              'core'),
+  ('Side Plank',                         'core'),
+  ('Leg Raises',                         'core'),
+  ('Russian Twists',                     'core')
+on conflict (name) do update set category = excluded.category;
