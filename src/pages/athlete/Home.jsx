@@ -116,6 +116,8 @@ export default function Home() {
   const [addingDate, setAddingDate] = useState(false)
   const [notes, setNotes] = useState('')
   const [savingNotes, setSavingNotes] = useState(false)
+  const [notesDirty, setNotesDirty] = useState(false)
+  const [notesSaved, setNotesSaved] = useState(false)
   const [installPrompt, setInstallPrompt] = useState(null)
   const [iosHintDismissed, setIosHintDismissed] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
@@ -354,6 +356,10 @@ export default function Home() {
     setSavingNotes(true)
     await supabase.from('sessions').update({ notes }).eq('id', session.id)
     setSavingNotes(false)
+    setNotesDirty(false)
+    setNotesSaved(true)
+    if (navigator.vibrate) navigator.vibrate(15)
+    setTimeout(() => setNotesSaved(false), 2000)
   }
 
   async function handleAddDate(date) {
@@ -372,6 +378,7 @@ export default function Home() {
     setFinishing(true)
     try {
       await supabase.from('sessions').update({ completed_at: new Date().toISOString(), total_tonnage: totalTonnage }).eq('id', session.id)
+      if (navigator.vibrate) navigator.vibrate([30, 50, 30])
       setFinished(true); setShowFinish(false)
       showToast('Session complete 🎉')
     } catch (err) { setError(err.message) }
@@ -605,17 +612,23 @@ export default function Home() {
       {session && (
         <div className="bg-white rounded-2xl border border-slate-200 p-4 mt-4 shadow-sm">
           <p className="text-xs font-medium text-slate-500 mb-2">Session notes</p>
-          <textarea value={notes} onChange={e => setNotes(e.target.value)} onBlur={saveNotes}
+          <textarea value={notes} onChange={e => { setNotes(e.target.value); setNotesDirty(true); setNotesSaved(false) }}
             placeholder="How did the session feel? Any notes for your coach..."
             rows={3}
             className="w-full bg-slate-100 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-vesta-red/40 resize-none transition-all" />
-          {savingNotes && <p className="text-xs text-slate-400 mt-1">Saving...</p>}
+          <button
+            onClick={saveNotes}
+            disabled={savingNotes || (!notesDirty && !notesSaved)}
+            className={`mt-2 w-full py-2 rounded-xl text-xs font-semibold transition-all ${notesSaved ? 'bg-green-100 text-green-700' : notesDirty ? 'bg-vesta-navy text-white active:opacity-80' : 'bg-slate-100 text-slate-400'}`}
+          >
+            {savingNotes ? 'Saving…' : notesSaved ? 'Saved ✓' : 'Save notes'}
+          </button>
         </div>
       )}
 
       {exerciseOrder.length > 0 && (
         <button onClick={() => setShowFinish(true)}
-          className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 bg-vesta-red hover:bg-vesta-red-dark text-white font-bold px-8 py-3.5 rounded-2xl text-sm shadow-lg shadow-vesta-red/20 transition-all active:scale-95 whitespace-nowrap">
+          className="w-full mt-4 bg-vesta-red active:bg-vesta-red-dark text-white font-bold py-4 rounded-2xl text-sm shadow-lg shadow-vesta-red/20 transition-all active:scale-[0.98]">
           Finish session
         </button>
       )}

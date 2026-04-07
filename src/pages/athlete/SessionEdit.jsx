@@ -65,6 +65,8 @@ export default function SessionEdit() {
   const [error, setError] = useState('')
   const [notes, setNotes] = useState('')
   const [savingNotes, setSavingNotes] = useState(false)
+  const [notesDirty, setNotesDirty] = useState(false)
+  const [notesSaved, setNotesSaved] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [finishing, setFinishing] = useState(false)
 
@@ -237,6 +239,7 @@ export default function SessionEdit() {
       .eq('id', session.id)
     setFinishing(false)
     if (error) { showToast('Could not mark complete — try again', 'error'); return }
+    if (navigator.vibrate) navigator.vibrate([30, 50, 30])
     setSession(prev => ({ ...prev, completed_at: completedAt }))
     showToast('Session complete!')
   }
@@ -246,6 +249,10 @@ export default function SessionEdit() {
     setSavingNotes(true)
     await supabase.from('sessions').update({ notes }).eq('id', session.id)
     setSavingNotes(false)
+    setNotesDirty(false)
+    setNotesSaved(true)
+    if (navigator.vibrate) navigator.vibrate(15)
+    setTimeout(() => setNotesSaved(false), 2000)
   }
 
   if (loading && !refreshing) return <div className="flex items-center justify-center min-h-screen"><Spinner size="lg" /></div>
@@ -341,13 +348,18 @@ export default function SessionEdit() {
         <p className="text-xs font-medium text-slate-500 mb-2">Session notes</p>
         <textarea
           value={notes}
-          onChange={e => setNotes(e.target.value)}
-          onBlur={saveNotes}
+          onChange={e => { setNotes(e.target.value); setNotesDirty(true); setNotesSaved(false) }}
           placeholder="How did the session feel? Any notes for your coach..."
           rows={3}
           className="w-full bg-slate-100 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-vesta-red/40 resize-none transition-all"
         />
-        {savingNotes && <p className="text-xs text-slate-400 mt-1">Saving...</p>}
+        <button
+          onClick={saveNotes}
+          disabled={savingNotes || (!notesDirty && !notesSaved)}
+          className={`mt-2 w-full py-2 rounded-xl text-xs font-semibold transition-all ${notesSaved ? 'bg-green-100 text-green-700' : notesDirty ? 'bg-vesta-navy text-white active:opacity-80' : 'bg-slate-100 text-slate-400'}`}
+        >
+          {savingNotes ? 'Saving…' : notesSaved ? 'Saved ✓' : 'Save notes'}
+        </button>
       </div>
 
       <div className="space-y-3">
@@ -427,7 +439,7 @@ export default function SessionEdit() {
         <button
           onClick={markComplete}
           disabled={finishing}
-          className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 bg-vesta-red text-white font-bold text-sm px-8 py-3.5 rounded-2xl shadow-lg active:opacity-80 transition-all disabled:opacity-60 flex items-center gap-2 whitespace-nowrap"
+          className="w-full mt-1 mb-2 bg-vesta-red active:bg-vesta-red-dark text-white font-bold py-4 rounded-2xl text-sm shadow-lg shadow-vesta-red/20 transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
         >
           {finishing ? <Spinner size="sm" /> : <CheckCircle2 size={16} />}
           Finish session
