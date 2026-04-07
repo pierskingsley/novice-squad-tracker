@@ -99,7 +99,7 @@ create table public.personal_bests (
   weight      numeric not null,
   reps        integer not null,
   achieved_at timestamptz default now(),
-  set_id      uuid references public.sets(id),
+  set_id      uuid references public.sets(id) on delete set null,
   unique(athlete_id, exercise_id)
 );
 
