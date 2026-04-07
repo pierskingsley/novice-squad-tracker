@@ -45,22 +45,30 @@ export default function SwipeToDelete({ onDelete, children, disabled = false, si
     if (!isHorizontal.current) { startX.current = null; return }
     startX.current = null
 
+    if (silent) {
+      if (offset < -SNAP_THRESHOLD) {
+        setOffset(0)
+        handleDelete()
+      } else {
+        setOffset(0)
+      }
+      return
+    }
+
     if (isOpen) {
-      // Close if swiped back enough
       if (offset > -SNAP_WIDTH + SNAP_THRESHOLD) {
         setOffset(0); setIsOpen(false)
       } else {
         setOffset(-SNAP_WIDTH)
       }
     } else {
-      // Open if swiped enough
       if (offset < -SNAP_THRESHOLD) {
         setOffset(-SNAP_WIDTH); setIsOpen(true)
       } else {
         setOffset(0)
       }
     }
-  }, [isOpen, offset])
+  }, [isOpen, offset, silent])
 
   async function handleDelete() {
     setDeleting(true)
