@@ -1,8 +1,9 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Spinner from '../../components/ui/Spinner'
+import Modal from '../../components/ui/Modal'
 import SwipeToDelete from '../../components/ui/SwipeToDelete'
 import { useToast } from '../../context/ToastContext'
 import { usePullToRefresh } from '../../hooks/usePullToRefresh'
@@ -64,6 +65,9 @@ export default function SessionEdit() {
   const [error, setError] = useState('')
   const [notes, setNotes] = useState('')
   const [savingNotes, setSavingNotes] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
+
+  const inputRefs = useRef({})
 
   const recalcTonnage = useCallback((savedSetsSnapshot) => {
     let total = 0
@@ -209,6 +213,8 @@ export default function SessionEdit() {
     setInputs(prev => { const n = { ...prev }; delete n[seId]; return n })
     setExpanded(prev => { const n = { ...prev }; delete n[seId]; return n })
     setSavedSets(prev => { const n = { ...prev }; delete n[seId]; recalcTonnage(n); return n })
+    setConfirmDeleteId(null)
+    showToast('Exercise removed')
   }
 
   async function saveNotes() {
@@ -321,7 +327,7 @@ export default function SessionEdit() {
                   {isPR && <span className="flex items-center gap-1 bg-vesta-red text-white text-xs font-bold px-2 py-0.5 rounded-full"><Trophy size={10} /> PR</span>}
                 </button>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <button onClick={() => deleteExercise(seId)} className="text-slate-300 hover:text-red-400 transition-colors p-1">
+                  <button onClick={() => setConfirmDeleteId(seId)} className="text-slate-300 hover:text-red-400 transition-colors p-1">
                     <Trash2 size={15} />
                   </button>
                   <div className="text-slate-400" onClick={() => setExpanded(prev => ({ ...prev, [seId]: !prev[seId] }))}>
@@ -347,9 +353,17 @@ export default function SessionEdit() {
                           <span className="text-xs font-mono text-center">
                             {isSaved ? <CheckCircle2 size={14} className="mx-auto text-vesta-red" /> : <span className="text-slate-400">{n}</span>}
                           </span>
-                          <input type="number" inputMode="decimal" value={inp.weight} onChange={e => updateInput(seId, n, 'weight', e.target.value)} placeholder="kg"
+                          <input type="number" inputMode="decimal" enterKeyHint="next"
+                            ref={el => { inputRefs.current[`${seId}-${n}-weight`] = el }}
+                            value={inp.weight} onChange={e => updateInput(seId, n, 'weight', e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); inputRefs.current[`${seId}-${n}-reps`]?.focus() } }}
+                            placeholder="kg"
                             className={`bg-slate-100 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300'}`} />
-                          <input type="number" inputMode="numeric" value={inp.reps} onChange={e => updateInput(seId, n, 'reps', e.target.value)} placeholder="reps"
+                          <input type="number" inputMode="numeric" enterKeyHint="done"
+                            ref={el => { inputRefs.current[`${seId}-${n}-reps`] = el }}
+                            value={inp.reps} onChange={e => updateInput(seId, n, 'reps', e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); logSet(seId, n) } }}
+                            placeholder="reps"
                             className={`bg-slate-100 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300'}`} />
                           <button onClick={() => logSet(seId, n)} disabled={isSaving || !inp.weight || !inp.reps}
                             className={`h-9 w-full rounded-lg text-xs font-semibold transition-all disabled:opacity-40 flex items-center justify-center ${isSaved ? 'bg-vesta-red/10 text-vesta-red hover:bg-vesta-red/20' : 'bg-vesta-red text-white hover:bg-vesta-red-dark'}`}>
@@ -369,6 +383,16 @@ export default function SessionEdit() {
           )
         })}
       </div>
+
+      <Modal open={!!confirmDeleteId} onClose={() => setConfirmDeleteId(null)} title="Remove exercise?">
+        <p className="text-slate-500 text-sm mb-5">
+          This will delete <strong className="text-slate-900">{exerciseMap[confirmDeleteId]?.exercise?.name}</strong> and all its logged sets. This can't be undone.
+        </p>
+        <div className="flex gap-3">
+          <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-3 rounded-xl text-sm font-medium bg-slate-100 text-slate-600 transition-colors">Cancel</button>
+          <button onClick={() => deleteExercise(confirmDeleteId)} className="flex-1 py-3 rounded-xl text-sm font-bold bg-red-500 hover:bg-red-600 text-white transition-colors">Remove</button>
+        </div>
+      </Modal>
     </div>
   )
 }
