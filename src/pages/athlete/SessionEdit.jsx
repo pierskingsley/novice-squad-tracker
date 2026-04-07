@@ -427,7 +427,7 @@ export default function SessionEdit() {
         <button
           onClick={markComplete}
           disabled={finishing}
-          className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-vesta-red text-white font-bold text-sm px-8 py-3.5 rounded-2xl shadow-lg active:opacity-80 transition-all disabled:opacity-60 flex items-center gap-2 whitespace-nowrap z-10"
+          className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 bg-vesta-red text-white font-bold text-sm px-8 py-3.5 rounded-2xl shadow-lg active:opacity-80 transition-all disabled:opacity-60 flex items-center gap-2 whitespace-nowrap"
         >
           {finishing ? <Spinner size="sm" /> : <CheckCircle2 size={16} />}
           Finish session

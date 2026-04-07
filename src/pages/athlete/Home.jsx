@@ -615,7 +615,7 @@ export default function Home() {
 
       {exerciseOrder.length > 0 && (
         <button onClick={() => setShowFinish(true)}
-          className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-vesta-red hover:bg-vesta-red-dark text-white font-bold px-8 py-3.5 rounded-2xl text-sm shadow-lg shadow-vesta-red/20 transition-all active:scale-95">
+          className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 bg-vesta-red hover:bg-vesta-red-dark text-white font-bold px-8 py-3.5 rounded-2xl text-sm shadow-lg shadow-vesta-red/20 transition-all active:scale-95 whitespace-nowrap">
           Finish session
         </button>
       )}
