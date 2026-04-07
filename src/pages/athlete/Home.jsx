@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext'
 import { TODAY } from '../../lib/constants'
 import Spinner from '../../components/ui/Spinner'
 import Modal from '../../components/ui/Modal'
-import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, Zap, Pencil, CalendarPlus, Trash2, Download } from 'lucide-react'
+import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, Zap, Pencil, CalendarPlus, Trash2, Download, Share, X } from 'lucide-react'
 
 function PastSessionsList({ sessions, onEdit, onAddDate, addingDate }) {
   const [pickedDate, setPickedDate] = useState('')
@@ -90,6 +90,7 @@ export default function Home() {
   const [notes, setNotes] = useState('')
   const [savingNotes, setSavingNotes] = useState(false)
   const [installPrompt, setInstallPrompt] = useState(null)
+  const [iosHintDismissed, setIosHintDismissed] = useState(() => localStorage.getItem('iosHintDismissed') === '1')
 
   const today = TODAY()
 
@@ -326,6 +327,18 @@ export default function Home() {
   const completedSets = Object.values(savedSets).reduce((sum, sets) => sum + Object.values(sets).filter(Boolean).length, 0)
   const totalSets = Object.values(setCount).reduce((sum, n) => sum + n, 0)
 
+  const firstName = profile?.name?.trim().split(' ')[0] || ''
+  const prCount = Object.values(prBadges).filter(Boolean).length
+  const congratsMessages = prCount > 0
+    ? [`${prCount} new personal record${prCount > 1 ? 's' : ''}. That's what it's about.`, `PRs in the books. Keep that momentum.`, `New personal best${prCount > 1 ? 's' : ''}. The hard work is paying off.`]
+    : totalTonnage >= 2000
+    ? [`${(totalTonnage / 1000).toFixed(1)} tonnes moved. Serious work today.`, `That's a big session. Recovery matters too.`, `Heavy day done. Your future self thanks you.`]
+    : [`Consistency is everything. Well done.`, `Another one in the books. Keep showing up.`, `Good session. Progress is progress.`, `Every rep counts. Nice work.`]
+  const congratsMsg = congratsMessages[new Date().getDay() % congratsMessages.length]
+
+  const isIOS = /iphone|ipad|ipod/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
+  const isStandalone = typeof window !== 'undefined' && window.navigator.standalone === true
+
   if (loading) return <div className="flex items-center justify-center min-h-screen"><Spinner size="lg" /></div>
 
   if (error) return (
@@ -341,12 +354,16 @@ export default function Home() {
         <div className="w-16 h-16 bg-vesta-red/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <CheckCircle2 size={32} className="text-vesta-red" />
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-1">Session complete</h1>
-        <p className="text-slate-400 text-sm mb-4">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+        <h1 className="text-2xl font-bold text-slate-900 mb-1">
+          {firstName ? `Nice work, ${firstName}!` : 'Session complete'}
+        </h1>
+        <p className="text-slate-500 text-sm mb-1">{congratsMsg}</p>
+        <p className="text-xs text-slate-400 mb-4">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
         <button onClick={() => navigate(`/athlete/session/${session.id}`)} className="flex items-center gap-1.5 text-xs text-vesta-red font-medium mx-auto">
           <Pencil size={13} /> Edit session
         </button>
       </div>
+
       <div className="bg-white rounded-2xl p-5 border border-slate-200 mb-4 shadow-sm">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div><div className="text-2xl font-bold text-vesta-red">{completedSets}</div><div className="text-xs text-slate-400 mt-0.5">Sets done</div></div>
@@ -354,12 +371,14 @@ export default function Home() {
           <div><div className="text-2xl font-bold text-slate-900">{exerciseOrder.length}</div><div className="text-xs text-slate-400 mt-0.5">Exercises</div></div>
         </div>
       </div>
-      {Object.entries(prBadges).filter(([, v]) => v).length > 0 && (
+
+      {prCount > 0 && (
         <div className="bg-vesta-red/5 border border-vesta-red/20 rounded-2xl p-4 mb-4">
           <div className="flex items-center gap-2 mb-2"><Trophy size={16} className="text-vesta-red" /><span className="text-vesta-red font-semibold text-sm">Personal Records</span></div>
           <ul className="space-y-1">{exerciseOrder.filter(seId => prBadges[seId]).map(seId => <li key={seId} className="text-slate-900 text-sm">{exerciseMap[seId]?.exercise?.name}</li>)}</ul>
         </div>
       )}
+
       <PastSessionsList sessions={pastSessions} onEdit={id => navigate(`/athlete/session/${id}`)} onAddDate={handleAddDate} addingDate={addingDate} />
     </div>
   )
@@ -380,6 +399,20 @@ export default function Home() {
           </button>
         )}
       </div>
+
+      {isIOS && !isStandalone && !iosHintDismissed && (
+        <div className="bg-vesta-navy/5 border border-vesta-navy/20 rounded-2xl px-4 py-3 mb-5 flex items-start gap-3">
+          <Share size={16} className="text-vesta-navy flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-vesta-navy mb-0.5">Add to your home screen</p>
+            <p className="text-xs text-slate-500">Tap the <strong>Share</strong> button in Safari, then <strong>Add to Home Screen</strong> for the full app experience.</p>
+          </div>
+          <button onClick={() => { setIosHintDismissed(true); localStorage.setItem('iosHintDismissed', '1') }}
+            className="text-slate-400 hover:text-slate-600 flex-shrink-0 mt-0.5">
+            <X size={15} />
+          </button>
+        </div>
+      )}
 
       {exerciseOrder.length > 0 && (
         <div className="bg-white rounded-2xl px-4 py-3 flex items-center justify-between mb-5 border border-slate-200 shadow-sm">
