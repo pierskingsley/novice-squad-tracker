@@ -6,7 +6,7 @@ const DAYS = 28
 
 function getDayLabels() {
   const labels = []
-  for (let i = DAYS - 1; i >= 0; i--) {
+  for (let i = 0; i < DAYS; i++) {
     const d = new Date()
     d.setDate(d.getDate() - i)
     labels.push(d.toISOString().split('T')[0])
