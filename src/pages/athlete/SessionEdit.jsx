@@ -206,8 +206,13 @@ export default function SessionEdit() {
   }
 
   async function deleteExercise(seId) {
-    await supabase.from('sets').delete().eq('session_exercise_id', seId)
-    await supabase.from('session_exercises').delete().eq('id', seId)
+    const { error: e1 } = await supabase.from('sets').delete().eq('session_exercise_id', seId)
+    const { error: e2 } = await supabase.from('session_exercises').delete().eq('id', seId)
+    if (e1 || e2) {
+      showToast('Failed to remove exercise — try again', 'error')
+      setConfirmDeleteId(null)
+      return
+    }
     setExerciseOrder(prev => prev.filter(i => i !== seId))
     setExerciseMap(prev => { const n = { ...prev }; delete n[seId]; return n })
     setInputs(prev => { const n = { ...prev }; delete n[seId]; return n })
@@ -215,6 +220,18 @@ export default function SessionEdit() {
     setSavedSets(prev => { const n = { ...prev }; delete n[seId]; recalcTonnage(n); return n })
     setConfirmDeleteId(null)
     showToast('Exercise removed')
+  }
+
+  async function markComplete() {
+    const completedAt = session.date < new Date().toISOString().split('T')[0]
+      ? `${session.date}T23:59:59.000Z`
+      : new Date().toISOString()
+    const { error } = await supabase.from('sessions')
+      .update({ completed_at: completedAt, total_tonnage: totalTonnage })
+      .eq('id', session.id)
+    if (error) { showToast('Could not mark complete — try again', 'error'); return }
+    setSession(prev => ({ ...prev, completed_at: completedAt }))
+    showToast('Session marked as complete')
   }
 
   async function saveNotes() {
@@ -276,6 +293,25 @@ export default function SessionEdit() {
             <div className="text-lg font-bold text-slate-900">{exerciseOrder.length}</div>
             <div className="text-xs text-slate-400">Exercises</div>
           </div>
+        </div>
+      )}
+
+      {session && !session.completed_at && (
+        <div className="bg-vesta-navy/5 border border-vesta-navy/20 rounded-2xl px-4 py-3 mb-4 flex items-center justify-between gap-3">
+          <p className="text-xs text-slate-600">Session not yet marked complete — it won't show in History.</p>
+          <button onClick={markComplete}
+            className="flex-shrink-0 bg-vesta-navy text-white text-xs font-semibold px-3 py-2 rounded-xl transition-colors active:opacity-80">
+            Mark complete
+          </button>
+        </div>
+      )}
+
+      {session && session.completed_at && (
+        <div className="bg-green-50 border border-green-200 rounded-2xl px-4 py-2.5 mb-4 flex items-center gap-2">
+          <CheckCircle2 size={14} className="text-green-500 flex-shrink-0" />
+          <p className="text-xs text-green-700 font-medium">
+            Completed {new Date(session.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+          </p>
         </div>
       )}
 

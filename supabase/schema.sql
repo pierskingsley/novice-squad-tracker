@@ -64,6 +64,7 @@ create table public.sessions (
   date                      date not null default current_date,
   completed_at              timestamptz,
   total_tonnage             numeric default 0,
+  notes                     text,
   created_at                timestamptz default now()
 );
 

@@ -333,8 +333,13 @@ export default function Home() {
   }
 
   async function deleteExercise(seId) {
-    await supabase.from('sets').delete().eq('session_exercise_id', seId)
-    await supabase.from('session_exercises').delete().eq('id', seId)
+    const { error: e1 } = await supabase.from('sets').delete().eq('session_exercise_id', seId)
+    const { error: e2 } = await supabase.from('session_exercises').delete().eq('id', seId)
+    if (e1 || e2) {
+      showToast('Failed to remove exercise — try again', 'error')
+      setConfirmDeleteId(null)
+      return
+    }
     setExerciseOrder(prev => prev.filter(id => id !== seId))
     setExerciseMap(prev => { const n = { ...prev }; delete n[seId]; return n })
     setInputs(prev => { const n = { ...prev }; delete n[seId]; return n })
