@@ -11,6 +11,7 @@ import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, ArrowLeft, Trash2, 
 import confetti from 'canvas-confetti'
 
 const CHARLOTTE_EXERCISE = "Charlotte Clover's Special Deadlift"
+const ZOE_EXERCISE = "Zoe's Overhead Press"
 function fireConfetti() {
   confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#C8102E', '#003087', '#ffffff', '#FFD700'] })
 }
@@ -213,6 +214,10 @@ export default function SessionEdit() {
           showToast(`🏆 New PR — ${exData.exercise.name}!`, 'pr')
         }
         if (exData.exercise.name === CHARLOTTE_EXERCISE) fireConfetti()
+        if (exData.exercise.name === ZOE_EXERCISE) {
+          showToast('Wow, du bist so stark! 💪', 'german')
+          if (navigator.vibrate) navigator.vibrate([40, 30, 40, 30, 80])
+        }
       }
       if (!isPR) showToast('Set logged')
     } catch (err) { console.error('Error logging set:', err) }

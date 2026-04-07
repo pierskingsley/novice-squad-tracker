@@ -12,11 +12,13 @@ function Toast({ toast, onDismiss }) {
     pr:      <Trophy size={15} className="text-amber-500 flex-shrink-0 mt-0.5" />,
     success: <CheckCircle2 size={15} className="text-vesta-navy flex-shrink-0 mt-0.5" />,
     error:   <AlertCircle size={15} className="text-red-500 flex-shrink-0 mt-0.5" />,
+    german:  <span className="text-base flex-shrink-0 mt-0.5 leading-none">🇩🇪</span>,
   }
   const borders = {
     pr:      'border-l-amber-400',
     success: 'border-l-vesta-navy',
     error:   'border-l-red-400',
+    german:  'border-l-[#FFCE00]',
   }
 
   return (
@@ -42,7 +44,7 @@ export function ToastProvider({ children }) {
   const showToast = useCallback((message, type = 'success') => {
     const id = Date.now() + Math.random()
     setToasts(prev => [...prev, { id, message, type }])
-    setTimeout(() => dismiss(id), type === 'pr' ? 4000 : 2500)
+    setTimeout(() => dismiss(id), type === 'pr' || type === 'german' ? 4000 : 2500)
   }, [dismiss])
 
   return (
