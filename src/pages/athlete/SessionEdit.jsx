@@ -49,6 +49,10 @@ export default function SessionEdit() {
       ])
       if (se) throw se
       setSession(sess); setAllExercises(exList || [])
+      // Auto-complete past sessions so they count in history
+      if (sess && !sess.completed_at && sess.date < new Date().toISOString().split('T')[0]) {
+        supabase.from('sessions').update({ completed_at: `${sess.date}T23:59:59.000Z` }).eq('id', sess.id)
+      }
       const { data: seRows } = await supabase.from('session_exercises').select('*, exercises(id, name)').eq('session_id', id).order('order_index')
       if (!seRows || seRows.length === 0) return
       const seIds = seRows.map(s => s.id)

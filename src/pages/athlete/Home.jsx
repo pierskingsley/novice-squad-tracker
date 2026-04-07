@@ -229,6 +229,22 @@ export default function Home() {
     finally { setSavingSet(prev => ({ ...prev, [key]: false })) }
   }
 
+  async function handleAddDate(date) {
+    setAddingDate(true)
+    try {
+      const { data: existing } = await supabase
+        .from('sessions').select('id').eq('athlete_id', user.id).eq('date', date).maybeSingle()
+      if (existing) { navigate(`/athlete/session/${existing.id}`); return }
+      const { data: newSess, error } = await supabase
+        .from('sessions')
+        .insert({ athlete_id: user.id, date, completed_at: `${date}T23:59:59.000Z` })
+        .select().single()
+      if (error) throw error
+      navigate(`/athlete/session/${newSess.id}`)
+    } catch (err) { console.error(err) }
+    finally { setAddingDate(false) }
+  }
+
   async function finishSession() {
     setFinishing(true)
     try {
@@ -275,7 +291,7 @@ export default function Home() {
           <ul className="space-y-1">{exerciseOrder.filter(seId => prBadges[seId]).map(seId => <li key={seId} className="text-slate-900 text-sm">{exerciseMap[seId]?.exercise?.name}</li>)}</ul>
         </div>
       )}
-      <PastSessionsList sessions={pastSessions} onEdit={id => navigate(`/athlete/session/${id}`)} />
+      <PastSessionsList sessions={pastSessions} onEdit={id => navigate(`/athlete/session/${id}`)} onAddDate={handleAddDate} addingDate={addingDate} />
     </div>
   )
 
@@ -393,7 +409,7 @@ export default function Home() {
         </button>
       )}
 
-      <PastSessionsList sessions={pastSessions} onEdit={id => navigate(`/athlete/session/${id}`)} />
+      <PastSessionsList sessions={pastSessions} onEdit={id => navigate(`/athlete/session/${id}`)} onAddDate={handleAddDate} addingDate={addingDate} />
 
       <Modal open={showFinish} onClose={() => setShowFinish(false)} title="Finish session?">
         <p className="text-slate-500 text-sm mb-5">
