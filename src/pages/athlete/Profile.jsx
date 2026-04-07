@@ -20,22 +20,14 @@ export default function Profile() {
       .select('weight, reps, achieved_at, exercises(name)')
       .eq('athlete_id', user.id)
       .order('weight', { ascending: false })
-
     setPbs(data || [])
     setLoading(false)
   }
 
-  async function handleSignOut() {
-    await signOut()
-  }
-
-  if (loading) {
-    return <div className="flex justify-center pt-20"><Spinner size="lg" /></div>
-  }
+  if (loading) return <div className="flex justify-center pt-20"><Spinner size="lg" /></div>
 
   return (
-    <div className="px-4 pt-6">
-      {/* Profile header */}
+    <div className="px-4 pt-6 pb-10">
       <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-5 flex items-center gap-4 shadow-sm">
         <div className="w-14 h-14 rounded-2xl bg-vesta-navy/10 flex items-center justify-center flex-shrink-0">
           <User size={26} className="text-vesta-navy" />
@@ -45,7 +37,7 @@ export default function Profile() {
           <div className="text-xs text-slate-400 mt-0.5">{user?.email}</div>
         </div>
         <button
-          onClick={handleSignOut}
+          onClick={signOut}
           className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-600 transition-colors py-2 px-3 rounded-xl hover:bg-red-50"
         >
           <LogOut size={14} />
@@ -53,10 +45,9 @@ export default function Profile() {
         </button>
       </div>
 
-      {/* PR Board */}
       <div className="flex items-center gap-2 mb-3">
-        <Trophy size={16} className="text-vesta-red" />
-        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">PR Board</h2>
+        <Trophy size={14} className="text-vesta-red" />
+        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">PR Board</h2>
       </div>
 
       {pbs.length === 0 ? (
@@ -71,7 +62,7 @@ export default function Profile() {
             {pbs.map((pb, i) => (
               <div key={i} className="flex items-center justify-between px-4 py-3.5">
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-slate-400 w-4 text-right">{i + 1}</span>
+                  <span className="text-xs text-slate-400 w-4 text-right font-mono">{i + 1}</span>
                   <span className="text-sm text-slate-900 font-medium">{pb.exercises?.name}</span>
                 </div>
                 <div className="text-right">

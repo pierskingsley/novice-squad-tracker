@@ -136,7 +136,7 @@ export default function History() {
                                   key={s.id}
                                   className="text-xs bg-slate-100 text-slate-600 rounded-lg px-2.5 py-1"
                                 >
-                                  {s.weight}kg × {s.reps}
+                                  {s.weight ? `${s.weight}kg × ${s.reps}` : [s.reps && `${s.reps} reps`, s.time_seconds && `${s.time_seconds}s`].filter(Boolean).join(' × ')}
                                 </span>
                               ))}
                             </div>
