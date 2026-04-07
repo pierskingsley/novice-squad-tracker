@@ -90,7 +90,7 @@ export default function Home() {
   const [notes, setNotes] = useState('')
   const [savingNotes, setSavingNotes] = useState(false)
   const [installPrompt, setInstallPrompt] = useState(null)
-  const [iosHintDismissed, setIosHintDismissed] = useState(() => localStorage.getItem('iosHintDismissed') === '1')
+  const [iosHintDismissed, setIosHintDismissed] = useState(false)
 
   const today = TODAY()
 
@@ -407,7 +407,7 @@ export default function Home() {
             <p className="text-xs font-semibold text-vesta-navy mb-0.5">Add to your home screen</p>
             <p className="text-xs text-slate-500">Tap the <strong>Share</strong> button in Safari, then <strong>Add to Home Screen</strong> for the full app experience.</p>
           </div>
-          <button onClick={() => { setIosHintDismissed(true); localStorage.setItem('iosHintDismissed', '1') }}
+          <button onClick={() => setIosHintDismissed(true)}
             className="text-slate-400 hover:text-slate-600 flex-shrink-0 mt-0.5">
             <X size={15} />
           </button>
