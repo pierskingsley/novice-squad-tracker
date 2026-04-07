@@ -359,11 +359,18 @@ export default function Home() {
   }
 
   async function deleteExercise(seId) {
+    const exerciseId = exerciseMap[seId]?.exercise?.id
     const { error } = await supabase.from('session_exercises').delete().eq('id', seId)
     if (error) {
       showToast('Failed to remove exercise — try again', 'error')
       setConfirmDeleteId(null)
       return
+    }
+    if (exerciseId) {
+      await supabase.from('personal_bests').delete()
+        .eq('athlete_id', user.id)
+        .eq('exercise_id', exerciseId)
+        .is('set_id', null)
     }
     setExerciseOrder(prev => prev.filter(id => id !== seId))
     setExerciseMap(prev => { const n = { ...prev }; delete n[seId]; return n })
@@ -388,6 +395,9 @@ export default function Home() {
   async function deletePastSession(sessId) {
     const { error } = await supabase.from('sessions').delete().eq('id', sessId)
     if (error) { showToast('Could not delete session — try again', 'error'); return }
+    await supabase.from('personal_bests').delete()
+      .eq('athlete_id', user.id)
+      .is('set_id', null)
     setPastSessions(prev => prev.filter(s => s.id !== sessId))
     setConfirmDeletePastId(null)
     showToast('Session deleted')

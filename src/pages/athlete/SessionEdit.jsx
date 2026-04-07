@@ -224,11 +224,18 @@ export default function SessionEdit() {
   }
 
   async function deleteExercise(seId) {
+    const exerciseId = exerciseMap[seId]?.exercise?.id
     const { error } = await supabase.from('session_exercises').delete().eq('id', seId)
     if (error) {
       showToast('Failed to remove exercise — try again', 'error')
       setConfirmDeleteId(null)
       return
+    }
+    if (exerciseId) {
+      await supabase.from('personal_bests').delete()
+        .eq('athlete_id', user.id)
+        .eq('exercise_id', exerciseId)
+        .is('set_id', null)
     }
     setExerciseOrder(prev => prev.filter(i => i !== seId))
     setExerciseMap(prev => { const n = { ...prev }; delete n[seId]; return n })
