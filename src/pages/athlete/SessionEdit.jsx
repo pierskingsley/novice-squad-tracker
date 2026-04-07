@@ -3,7 +3,38 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Spinner from '../../components/ui/Spinner'
-import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, ArrowLeft, Trash2 } from 'lucide-react'
+import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, ArrowLeft, Trash2, X } from 'lucide-react'
+
+function ExercisePicker({ exercises, onSelect, adding }) {
+  const [activeCategory, setActiveCategory] = useState(null)
+  const categories = [...new Set(exercises.map(e => e.category).filter(Boolean))]
+  const filtered = activeCategory ? exercises.filter(e => e.category === activeCategory) : exercises
+
+  return (
+    <div>
+      <div className="flex gap-2 overflow-x-auto pb-1 mb-3 -mx-1 px-1">
+        <button
+          onClick={() => setActiveCategory(null)}
+          className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${!activeCategory ? 'bg-vesta-red text-white' : 'bg-slate-100 text-slate-500'}`}
+        >All</button>
+        {categories.map(cat => (
+          <button key={cat}
+            onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
+            className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors ${activeCategory === cat ? 'bg-vesta-red text-white' : 'bg-slate-100 text-slate-500'}`}
+          >{cat}</button>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {filtered.map(ex => (
+          <button key={ex.id} onClick={() => onSelect(ex.id)} disabled={adding}
+            className="px-3.5 py-2.5 bg-slate-100 active:bg-vesta-red active:text-white rounded-xl text-sm text-slate-700 font-medium transition-colors disabled:opacity-40 select-none">
+            {ex.name}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default function SessionEdit() {
   const { id } = useParams()
@@ -12,7 +43,7 @@ export default function SessionEdit() {
 
   const [session, setSession] = useState(null)
   const [allExercises, setAllExercises] = useState([])
-  const [selectedExerciseId, setSelectedExerciseId] = useState('')
+  const [showPicker, setShowPicker] = useState(false)
   const [addingExercise, setAddingExercise] = useState(false)
   const [exerciseMap, setExerciseMap] = useState({})
   const [exerciseOrder, setExerciseOrder] = useState([])
@@ -79,13 +110,12 @@ export default function SessionEdit() {
     finally { setLoading(false) }
   }
 
-  async function addExercise() {
-    if (!selectedExerciseId) return
+  async function addExercise(exerciseId) {
     setAddingExercise(true)
     try {
       const { data: newSE, error: ie } = await supabase
         .from('session_exercises')
-        .insert({ session_id: id, exercise_id: selectedExerciseId, order_index: exerciseOrder.length, notes: '' })
+        .insert({ session_id: id, exercise_id: exerciseId, order_index: exerciseOrder.length, notes: '' })
         .select('*, exercises(id, name)').single()
       if (ie) throw ie
       const seId = newSE.id
@@ -95,7 +125,7 @@ export default function SessionEdit() {
       setExpanded(prev => ({ ...prev, [seId]: true }))
       setSavedSets(prev => ({ ...prev, [seId]: { 1: null, 2: null, 3: null } }))
       setInputs(prev => ({ ...prev, [seId]: { 1: { weight: '', reps: '' }, 2: { weight: '', reps: '' }, 3: { weight: '', reps: '' } } }))
-      setSelectedExerciseId('')
+      setShowPicker(false)
     } catch (err) { setError(err.message) }
     finally { setAddingExercise(false) }
   }
@@ -209,19 +239,23 @@ export default function SessionEdit() {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-4 shadow-sm">
-        <p className="text-xs font-medium text-slate-500 mb-2">Add exercise</p>
-        <div className="flex gap-2">
-          <select value={selectedExerciseId} onChange={e => setSelectedExerciseId(e.target.value)}
-            className="flex-1 bg-slate-100 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-vesta-red transition-colors">
-            <option value="">Select exercise...</option>
-            {allExercises.map(ex => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
-          </select>
-          <button onClick={addExercise} disabled={!selectedExerciseId || addingExercise}
-            className="bg-vesta-red hover:bg-vesta-red-dark disabled:opacity-40 text-white font-bold px-4 rounded-xl text-sm transition-colors flex items-center gap-1.5">
-            {addingExercise ? <Spinner size="sm" /> : <Plus size={16} />} Add
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm mb-4 overflow-hidden">
+        {!showPicker ? (
+          <button onClick={() => setShowPicker(true)}
+            className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-semibold text-vesta-red active:bg-slate-50 transition-colors">
+            <Plus size={16} /> Add exercise
           </button>
-        </div>
+        ) : (
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Choose exercise</p>
+              <button onClick={() => setShowPicker(false)} className="text-slate-400 hover:text-slate-600 p-1 -mr-1">
+                <X size={16} />
+              </button>
+            </div>
+            <ExercisePicker exercises={allExercises} onSelect={addExercise} adding={addingExercise} />
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-4 shadow-sm">
