@@ -27,22 +27,38 @@ export default function Profile() {
   }
 
   async function loadStats() {
-    const { data } = await supabase
+    const { data: sessions } = await supabase
       .from('sessions')
-      .select('date, total_tonnage')
+      .select('id, date')
       .eq('athlete_id', user.id)
       .not('completed_at', 'is', null)
       .order('date', { ascending: true })
 
-    if (!data || data.length === 0) {
+    if (!sessions || sessions.length === 0) {
       setStats({ sessions: 0, tonnage: 0, streak: 0 })
       return
     }
 
-    const tonnage = data.reduce((sum, s) => sum + (parseFloat(s.total_tonnage) || 0), 0)
+    // Compute tonnage from sets directly — more reliable than the
+    // denormalized total_tonnage column which can be 0 if a session
+    // was completed without every set being explicitly logged
+    const sessionIds = sessions.map(s => s.id)
+    const { data: seRows } = await supabase
+      .from('session_exercises')
+      .select('id')
+      .in('session_id', sessionIds)
+
+    let tonnage = 0
+    if (seRows?.length > 0) {
+      const { data: sets } = await supabase
+        .from('sets')
+        .select('weight, reps')
+        .in('session_exercise_id', seRows.map(s => s.id))
+      tonnage = (sets || []).reduce((sum, s) => sum + s.weight * s.reps, 0)
+    }
 
     // longest streak of consecutive calendar days
-    const dates = [...new Set(data.map(s => s.date))].sort()
+    const dates = [...new Set(sessions.map(s => s.date))].sort()
     let best = 1, current = 1
     for (let i = 1; i < dates.length; i++) {
       const diff = (new Date(dates[i]) - new Date(dates[i - 1])) / 86400000
@@ -50,7 +66,7 @@ export default function Profile() {
       if (current > best) best = current
     }
 
-    setStats({ sessions: data.length, tonnage, streak: best })
+    setStats({ sessions: sessions.length, tonnage, streak: best })
   }
 
   if (loading) return <div className="flex justify-center pt-20"><Spinner size="lg" /></div>
