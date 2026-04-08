@@ -144,7 +144,6 @@ export default function Home() {
   const [totalTonnage, setTotalTonnage] = useState(0)
   const [loading, setLoading] = useState(true)
   const [savingSet, setSavingSet] = useState({})
-  const [showFinish, setShowFinish] = useState(false)
   const [finishing, setFinishing] = useState(false)
   const [finished, setFinished] = useState(false)
   const [error, setError] = useState('')
@@ -495,10 +494,13 @@ export default function Home() {
   async function finishSession() {
     setFinishing(true)
     try {
-      await supabase.from('sessions').update({ completed_at: new Date().toISOString(), total_tonnage: totalTonnage }).eq('id', session.id)
+      const completedAt = session.date < today
+        ? `${session.date}T23:59:59.000Z`
+        : new Date().toISOString()
+      await supabase.from('sessions').update({ completed_at: completedAt, total_tonnage: totalTonnage }).eq('id', session.id)
       if (navigator.vibrate) navigator.vibrate([30, 50, 30])
       if (totalTonnage >= 1000) setTimeout(fireTonneClub, 300)
-      setFinished(true); setShowFinish(false)
+      setFinished(true)
       showToast('Session complete 🎉')
     } catch (err) { setError(err.message) }
     finally { setFinishing(false) }
@@ -793,10 +795,11 @@ export default function Home() {
         </div>
       )}
 
-      {exerciseOrder.length > 0 && (
-        <button onClick={() => setShowFinish(true)}
-          className="w-full mt-4 bg-vesta-red active:bg-vesta-red-dark text-white font-bold py-4 rounded-2xl text-sm shadow-lg shadow-vesta-red/20 transition-all active:scale-[0.98]">
-          Finish session
+      {session && !session.completed_at && completedSets > 0 && (
+        <button onClick={finishSession} disabled={finishing}
+          className="w-full mt-4 bg-vesta-red active:bg-vesta-red-dark text-white font-bold py-4 rounded-2xl text-sm shadow-lg shadow-vesta-red/20 transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2">
+          {finishing ? <Spinner size="sm" /> : <CheckCircle2 size={16} />}
+          Complete session
         </button>
       )}
 
@@ -820,19 +823,6 @@ export default function Home() {
         </div>
       </Modal>
 
-      <Modal open={showFinish} onClose={() => setShowFinish(false)} title="Finish session?">
-        <p className="text-slate-500 text-sm mb-5">
-          You've completed <strong className="text-slate-900">{completedSets}/{totalSets} sets</strong> with{' '}
-          <strong className="text-vesta-red">{totalTonnage}kg</strong> total tonnage.
-          {completedSets < totalSets && " Some sets are unlogged — that's fine."}
-        </p>
-        <div className="flex gap-3">
-          <button onClick={() => setShowFinish(false)} className="flex-1 py-3 rounded-xl text-sm font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">Keep going</button>
-          <button onClick={finishSession} disabled={finishing} className="flex-1 py-3 rounded-xl text-sm font-bold bg-vesta-red hover:bg-vesta-red-dark text-white transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-            {finishing && <Spinner size="sm" />} Done
-          </button>
-        </div>
-      </Modal>
       {showZoe && <ZoeCelebration onDismiss={() => setShowZoe(false)} />}
     </div>
   )
