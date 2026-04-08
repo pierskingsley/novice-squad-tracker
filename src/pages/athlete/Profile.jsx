@@ -2,19 +2,21 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Spinner from '../../components/ui/Spinner'
-import { Trophy, LogOut, User } from 'lucide-react'
+import { Trophy, LogOut, User, Dumbbell, Flame, Activity } from 'lucide-react'
 
 export default function Profile() {
   const { user, profile, signOut } = useAuth()
   const [pbs, setPbs] = useState([])
+  const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (user) loadPBs()
+    if (user) {
+      Promise.all([loadPBs(), loadStats()]).finally(() => setLoading(false))
+    }
   }, [user])
 
   async function loadPBs() {
-    setLoading(true)
     const { data } = await supabase
       .from('personal_bests')
       .select('weight, reps, achieved_at, exercises(name)')
@@ -22,7 +24,33 @@ export default function Profile() {
       .not('set_id', 'is', null)
       .order('weight', { ascending: false })
     setPbs(data || [])
-    setLoading(false)
+  }
+
+  async function loadStats() {
+    const { data } = await supabase
+      .from('sessions')
+      .select('date, total_tonnage')
+      .eq('athlete_id', user.id)
+      .not('completed_at', 'is', null)
+      .order('date', { ascending: true })
+
+    if (!data || data.length === 0) {
+      setStats({ sessions: 0, tonnage: 0, streak: 0 })
+      return
+    }
+
+    const tonnage = data.reduce((sum, s) => sum + (parseFloat(s.total_tonnage) || 0), 0)
+
+    // longest streak of consecutive calendar days
+    const dates = [...new Set(data.map(s => s.date))].sort()
+    let best = 1, current = 1
+    for (let i = 1; i < dates.length; i++) {
+      const diff = (new Date(dates[i]) - new Date(dates[i - 1])) / 86400000
+      current = diff === 1 ? current + 1 : 1
+      if (current > best) best = current
+    }
+
+    setStats({ sessions: data.length, tonnage, streak: best })
   }
 
   if (loading) return <div className="flex justify-center pt-20"><Spinner size="lg" /></div>
@@ -45,6 +73,32 @@ export default function Profile() {
           Sign out
         </button>
       </div>
+
+      {stats && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm mb-5">
+          <div className="grid grid-cols-3 divide-x divide-slate-100">
+            <div className="flex flex-col items-center py-4 gap-1">
+              <Activity size={16} className="text-vesta-navy mb-0.5" />
+              <span className="text-xl font-bold text-slate-900">{stats.sessions}</span>
+              <span className="text-xs text-slate-400">Sessions</span>
+            </div>
+            <div className="flex flex-col items-center py-4 gap-1">
+              <Dumbbell size={16} className="text-vesta-navy mb-0.5" />
+              <span className="text-xl font-bold text-slate-900">
+                {stats.tonnage >= 1000
+                  ? `${(stats.tonnage / 1000).toFixed(1)}t`
+                  : `${Math.round(stats.tonnage)}kg`}
+              </span>
+              <span className="text-xs text-slate-400">Lifted</span>
+            </div>
+            <div className="flex flex-col items-center py-4 gap-1">
+              <Flame size={16} className="text-vesta-navy mb-0.5" />
+              <span className="text-xl font-bold text-slate-900">{stats.streak}</span>
+              <span className="text-xs text-slate-400">Best streak</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center gap-2 mb-3">
         <Trophy size={14} className="text-vesta-red" />
