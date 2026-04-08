@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Spinner from '../../components/ui/Spinner'
-import { ArrowLeft, Plus, Trash2, ChevronDown, UserPlus } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, ChevronDown, UserPlus, Users } from 'lucide-react'
 
 function ExerciseRow({ ex, onChange, onRemove }) {
   return (
@@ -114,6 +114,17 @@ export default function ProgrammeBuilder() {
     setAssignments(prev => [...prev, { athlete_id: '', assigned_date: new Date().toISOString().split('T')[0], _localId: Math.random().toString(36).slice(2) }])
   }
 
+  function assignWholeSquad() {
+    const date = new Date().toISOString().split('T')[0]
+    const alreadyAssigned = new Set(assignments.map(a => a.athlete_id).filter(Boolean))
+    const toAdd = athletes.filter(a => !alreadyAssigned.has(a.id))
+    if (toAdd.length === 0) return
+    setAssignments(prev => [
+      ...prev,
+      ...toAdd.map(a => ({ athlete_id: a.id, assigned_date: date, _localId: Math.random().toString(36).slice(2) })),
+    ])
+  }
+
   function updateAssignment(localId, key, value) { setAssignments(prev => prev.map(a => a._localId === localId ? { ...a, [key]: value } : a)) }
   function removeAssignment(localId) { setAssignments(prev => prev.filter(a => a._localId !== localId)) }
 
@@ -190,9 +201,16 @@ export default function ProgrammeBuilder() {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Assign to athletes</h2>
-          <button onClick={addAssignment} className="flex items-center gap-1 text-xs text-vesta-red hover:text-vesta-red-dark transition-colors">
-            <UserPlus size={13} /> Add
-          </button>
+          <div className="flex items-center gap-3">
+            {athletes.length > 0 && (
+              <button onClick={assignWholeSquad} className="flex items-center gap-1 text-xs text-vesta-navy font-medium hover:text-vesta-navy/70 transition-colors">
+                <Users size={13} /> Whole squad
+              </button>
+            )}
+            <button onClick={addAssignment} className="flex items-center gap-1 text-xs text-vesta-red hover:text-vesta-red-dark transition-colors">
+              <UserPlus size={13} /> Add
+            </button>
+          </div>
         </div>
         {assignments.length === 0 ? (
           <p className="text-xs text-slate-400 text-center py-3">No assignments yet — tap "Add" to assign this programme to an athlete.</p>
