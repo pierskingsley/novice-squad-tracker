@@ -145,7 +145,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [savingSet, setSavingSet] = useState({})
   const [finishing, setFinishing] = useState(false)
-  const [finished, setFinished] = useState(false)
   const [error, setError] = useState('')
   const [pastSessions, setPastSessions] = useState([])
   const [addingDate, setAddingDate] = useState(false)
@@ -252,11 +251,10 @@ export default function Home() {
       }
 
       if (!sess) { setLoading(false); return }
-      setSession(sess)
-      setNotes(sess.notes || '')
-      if (sess.completed_at) setFinished(true)
       const pastIds = (past || []).map(s => s.id)
       await loadSessionExercises(sess.id, pastIds)
+      setSession(sess)
+      setNotes(sess.notes || '')
     } catch (err) { setError(err.message) }
     finally { setLoading(false) }
   }
@@ -285,35 +283,32 @@ export default function Home() {
   }
 
   async function loadSessionExercises(sessionId, pastSessionIds = []) {
-    const { data: seRows } = await supabase
+    const { data: seRows, error: seError } = await supabase
       .from('session_exercises')
-      .select('*, exercises(id, name), programme_exercises(prescribed_sets, prescribed_weight)')
+      .select('*, exercises(id, name)')
       .eq('session_id', sessionId).order('order_index')
+    if (seError) { setError(seError.message); return }
     if (!seRows || seRows.length === 0) return
     const seIds = seRows.map(s => s.id)
     const exerciseIds = seRows.map(s => s.exercise_id)
-    const [{ data: existingSets }, lastTime] = await Promise.all([
+    const [{ data: existingSets, error: setsError }, lastTime] = await Promise.all([
       supabase.from('sets').select('*').in('session_exercise_id', seIds),
       fetchLastTimeSets(exerciseIds, pastSessionIds),
     ])
+    if (setsError) { setError(setsError.message); return }
     const newExMap = {}, newExOrder = [], newInputs = {}, newSaved = {}, newExpanded = {}
     for (const se of seRows) {
       newExMap[se.id] = { sessionExercise: se, exercise: se.exercises }
       newExOrder.push(se.id)
       newExpanded[se.id] = true
       const setsForThis = existingSets?.filter(s => s.session_exercise_id === se.id) || []
-      const prescribedSets = se.programme_exercises?.prescribed_sets ?? 3
-      const prescribedWeight = se.programme_exercises?.prescribed_weight
-      const numSets = Math.max(prescribedSets, setsForThis.length)
+      const numSets = Math.max(3, setsForThis.length)
       newInputs[se.id] = {}
       newSaved[se.id] = {}
       for (let n = 1; n <= numSets; n++) {
         const saved = setsForThis.find(s => s.set_number === n)
         newSaved[se.id][n] = saved ? { id: saved.id, weight: saved.weight, reps: saved.reps } : null
-        newInputs[se.id][n] = {
-          weight: saved ? String(saved.weight) : (prescribedWeight > 0 ? String(prescribedWeight) : ''),
-          reps: saved ? String(saved.reps) : '',
-        }
+        newInputs[se.id][n] = { weight: saved ? String(saved.weight) : '', reps: saved ? String(saved.reps) : '' }
       }
     }
     setExerciseMap(newExMap); setExerciseOrder(newExOrder); setInputs(newInputs)
@@ -500,12 +495,13 @@ export default function Home() {
       await supabase.from('sessions').update({ completed_at: completedAt, total_tonnage: totalTonnage }).eq('id', session.id)
       if (navigator.vibrate) navigator.vibrate([30, 50, 30])
       if (totalTonnage >= 1000) setTimeout(fireTonneClub, 300)
-      setFinished(true)
+      setSession(prev => ({ ...prev, completed_at: completedAt }))
       showToast('Session complete 🎉')
     } catch (err) { setError(err.message) }
     finally { setFinishing(false) }
   }
 
+  const finished = !!session?.completed_at
   const completedSets = Object.values(savedSets).reduce((sum, sets) => sum + Object.values(sets).filter(Boolean).length, 0)
   const totalSets = Object.values(inputs).reduce((sum, seInputs) => sum + Object.keys(seInputs).length, 0)
 
