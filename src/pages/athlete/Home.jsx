@@ -512,7 +512,7 @@ export default function Home() {
     ? [`${prCount} new personal record${prCount > 1 ? 's' : ''}. That's what it's about.`]
     : totalTonnage >= 2000
     ? [`${(totalTonnage / 1000).toFixed(1)} tonnes moved. Serious work today.`]
-    : ['Remember, beers buy boats. Get to the bar.', 'Good session. Progress is progress.', 'Say goodbye to those chicken legs.', 'My mooscklezz are getting bigger.', 'Du wurst immer starker']
+    : ['Remember, beers buy boats. Get to the bar.', 'Good session. Progress is progress.', 'Say goodbye to those chicken legs.', 'My mooscklezz are getting bigger.', 'Du wirst immer stärker']
   const congratsMsg = congratsMessages[new Date().getDay() % congratsMessages.length]
 
   const isIOS = /iphone|ipad|ipod/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
