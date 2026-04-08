@@ -8,7 +8,7 @@ import Modal from '../../components/ui/Modal'
 import SwipeToDelete from '../../components/ui/SwipeToDelete'
 import { useToast } from '../../context/ToastContext'
 import { usePullToRefresh } from '../../hooks/usePullToRefresh'
-import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, Zap, Pencil, CalendarPlus, Trash2, Share, X, Download, RotateCcw } from 'lucide-react'
+import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, Zap, Pencil, CalendarPlus, Trash2, Share, X, Download, RotateCcw, ClipboardList } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import ZoeCelebration from '../../components/ui/ZoeCelebration'
 
@@ -143,6 +143,7 @@ export default function Home() {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [confirmDeletePastId, setConfirmDeletePastId] = useState(null)
   const [showZoe, setShowZoe] = useState(false)
+  const [assignedProgrammeName, setAssignedProgrammeName] = useState(null)
 
   const inputRefs = useRef({})
   const today = TODAY()
@@ -184,12 +185,60 @@ export default function Home() {
       ])
       setAllExercises(exList || [])
       setPastSessions(past || [])
-      if (!existingSess) { setLoading(false); return }
-      setSession(existingSess)
-      setNotes(existingSess.notes || '')
-      if (existingSess.completed_at) setFinished(true)
+
+      let sess = existingSess
+
+      if (!sess) {
+        // Check for a coach-assigned programme for today
+        const { data: assignment } = await supabase
+          .from('programme_assignments')
+          .select('id, programme_id, programmes(name)')
+          .eq('athlete_id', user.id)
+          .eq('assigned_date', today)
+          .maybeSingle()
+
+        if (assignment) {
+          const { data: progExercises } = await supabase
+            .from('programme_exercises')
+            .select('id, exercise_id, prescribed_sets, order_index')
+            .eq('programme_id', assignment.programme_id)
+            .order('order_index')
+
+          const { data: newSess, error: se } = await supabase
+            .from('sessions')
+            .insert({ athlete_id: user.id, date: today, programme_assignment_id: assignment.id })
+            .select().single()
+          if (se) throw se
+          sess = newSess
+
+          if (progExercises?.length > 0) {
+            await supabase.from('session_exercises').insert(
+              progExercises.map(pe => ({
+                session_id: sess.id,
+                exercise_id: pe.exercise_id,
+                programme_exercise_id: pe.id,
+                order_index: pe.order_index,
+                notes: '',
+              }))
+            )
+          }
+          setAssignedProgrammeName(assignment.programmes?.name || null)
+        }
+      } else if (existingSess.programme_assignment_id) {
+        const { data: asgn } = await supabase
+          .from('programme_assignments')
+          .select('programmes(name)')
+          .eq('id', existingSess.programme_assignment_id)
+          .maybeSingle()
+        setAssignedProgrammeName(asgn?.programmes?.name || null)
+      }
+
+      if (!sess) { setLoading(false); return }
+      setSession(sess)
+      setNotes(sess.notes || '')
+      if (sess.completed_at) setFinished(true)
       const pastIds = (past || []).map(s => s.id)
-      await loadSessionExercises(existingSess.id, pastIds)
+      await loadSessionExercises(sess.id, pastIds)
     } catch (err) { setError(err.message) }
     finally { setLoading(false) }
   }
@@ -219,7 +268,9 @@ export default function Home() {
 
   async function loadSessionExercises(sessionId, pastSessionIds = []) {
     const { data: seRows } = await supabase
-      .from('session_exercises').select('*, exercises(id, name)').eq('session_id', sessionId).order('order_index')
+      .from('session_exercises')
+      .select('*, exercises(id, name), programme_exercises(prescribed_sets, prescribed_weight)')
+      .eq('session_id', sessionId).order('order_index')
     if (!seRows || seRows.length === 0) return
     const seIds = seRows.map(s => s.id)
     const exerciseIds = seRows.map(s => s.exercise_id)
@@ -233,13 +284,18 @@ export default function Home() {
       newExOrder.push(se.id)
       newExpanded[se.id] = true
       const setsForThis = existingSets?.filter(s => s.session_exercise_id === se.id) || []
-      const numSets = Math.max(3, setsForThis.length)
+      const prescribedSets = se.programme_exercises?.prescribed_sets ?? 3
+      const prescribedWeight = se.programme_exercises?.prescribed_weight
+      const numSets = Math.max(prescribedSets, setsForThis.length)
       newInputs[se.id] = {}
       newSaved[se.id] = {}
       for (let n = 1; n <= numSets; n++) {
         const saved = setsForThis.find(s => s.set_number === n)
         newSaved[se.id][n] = saved ? { id: saved.id, weight: saved.weight, reps: saved.reps } : null
-        newInputs[se.id][n] = { weight: saved ? String(saved.weight) : '', reps: saved ? String(saved.reps) : '' }
+        newInputs[se.id][n] = {
+          weight: saved ? String(saved.weight) : (prescribedWeight > 0 ? String(prescribedWeight) : ''),
+          reps: saved ? String(saved.reps) : '',
+        }
       }
     }
     setExerciseMap(newExMap); setExerciseOrder(newExOrder); setInputs(newInputs)
@@ -534,6 +590,16 @@ export default function Home() {
             <p className="text-xs text-slate-500">Tap <strong>Share</strong> in Safari, then <strong>Add to Home Screen</strong>.</p>
           </div>
           <button onClick={() => setIosHintDismissed(true)} className="text-slate-400 hover:text-slate-600 flex-shrink-0 mt-0.5"><X size={15} /></button>
+        </div>
+      )}
+
+      {assignedProgrammeName && (
+        <div className="bg-vesta-navy/5 border border-vesta-navy/20 rounded-2xl px-4 py-3 mb-4 flex items-center gap-3">
+          <ClipboardList size={16} className="text-vesta-navy flex-shrink-0" />
+          <div>
+            <p className="text-xs font-semibold text-vesta-navy uppercase tracking-wide">Today's programme</p>
+            <p className="text-sm font-medium text-slate-800">{assignedProgrammeName}</p>
+          </div>
         </div>
       )}
 
