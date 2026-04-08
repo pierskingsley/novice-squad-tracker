@@ -8,12 +8,28 @@ import Modal from '../../components/ui/Modal'
 import SwipeToDelete from '../../components/ui/SwipeToDelete'
 import { useToast } from '../../context/ToastContext'
 import { usePullToRefresh } from '../../hooks/usePullToRefresh'
-import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, Zap, Pencil, CalendarPlus, Trash2, Share, X, Download, RotateCcw, ClipboardList } from 'lucide-react'
+import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, Pencil, CalendarPlus, Trash2, Share, X, Download, RotateCcw, ClipboardList } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import ZoeCelebration from '../../components/ui/ZoeCelebration'
 
 const CHARLOTTE_EXERCISE = "Charlotte Clover's Special Deadlift"
 const ZOE_EXERCISE = "Zoe's Overhead Press"
+
+const WELCOME_MESSAGES = [
+  n => `Welcome back, ${n}`,
+  n => `Good to see you, ${n}`,
+  n => `Ready to go, ${n}?`,
+  n => `Let's get after it, ${n}`,
+]
+
+const QUOTES = [
+  'What will you lift today?',
+  'Heavy one?',
+  'Are you still hungover?',
+  "Let's move some weight.",
+  'Time to earn it.',
+  'Make today count.',
+]
 
 function fireConfetti() {
   confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#C8102E', '#003087', '#ffffff', '#FFD700'] })
@@ -144,6 +160,9 @@ export default function Home() {
   const [confirmDeletePastId, setConfirmDeletePastId] = useState(null)
   const [showZoe, setShowZoe] = useState(false)
   const [assignedProgrammeName, setAssignedProgrammeName] = useState(null)
+  const [pulsingSet, setPulsingSet] = useState({})
+  const [welcomeIdx] = useState(() => new Date().getDay() % WELCOME_MESSAGES.length)
+  const [quoteIdx] = useState(() => Math.floor(Date.now() / 3600000) % QUOTES.length)
 
   const inputRefs = useRef({})
   const today = TODAY()
@@ -410,6 +429,8 @@ export default function Home() {
         if (exData.exercise.name === ZOE_EXERCISE) setShowZoe(true)
       }
       if (!isPR) showToast('Set logged')
+      setPulsingSet(prev => ({ ...prev, [key]: true }))
+      setTimeout(() => setPulsingSet(prev => ({ ...prev, [key]: false })), 500)
     } catch (err) { showToast('Failed to log set — try again', 'error') }
     finally { setSavingSet(prev => ({ ...prev, [key]: false })) }
   }
@@ -573,7 +594,7 @@ export default function Home() {
       <div className="flex items-start justify-between mb-5">
         <div>
           <p className="text-xs text-slate-400 uppercase tracking-wider font-medium mb-0.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-          <h1 className="text-2xl font-bold text-slate-900">{profile?.name ? `Welcome back, ${profile.name.trim().split(' ')[0]}` : "Today's session"}</h1>
+          <h1 className="text-2xl font-bold text-slate-900">{profile?.name ? WELCOME_MESSAGES[welcomeIdx](profile.name.trim().split(' ')[0]) : "Today's session"}</h1>
         </div>
         {installPrompt && (
           <button onClick={handleInstall} className="flex items-center gap-1.5 bg-vesta-navy text-white text-xs font-semibold px-3 py-2 rounded-xl shadow-sm flex-shrink-0 mt-1">
@@ -622,26 +643,45 @@ export default function Home() {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm mb-4 overflow-hidden">
-        {!showPicker ? (
-          <button onClick={() => setShowPicker(true)} className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-semibold text-vesta-red active:bg-slate-50 transition-colors">
-            <Plus size={16} /> Add exercise
-          </button>
-        ) : (
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Choose exercise</p>
-              <button onClick={() => setShowPicker(false)} className="text-slate-400 hover:text-slate-600 p-1 -mr-1"><X size={16} /></button>
+      {exerciseOrder.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm mb-4 overflow-hidden">
+          {!showPicker ? (
+            <button onClick={() => setShowPicker(true)} className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-semibold text-vesta-red active:bg-slate-50 transition-colors">
+              <Plus size={16} /> Add exercise
+            </button>
+          ) : (
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Choose exercise</p>
+                <button onClick={() => setShowPicker(false)} className="text-slate-400 hover:text-slate-600 p-1 -mr-1"><X size={16} /></button>
+              </div>
+              <ExercisePicker exercises={allExercises} onSelect={addExercise} adding={addingExercise} />
             </div>
-            <ExercisePicker exercises={allExercises} onSelect={addExercise} adding={addingExercise} />
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {exerciseOrder.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mb-4 shadow-sm"><Zap size={28} className="text-slate-300" /></div>
-          <p className="text-slate-400 text-sm">Add your first exercise to get started.</p>
+        <div className="flex flex-col items-center justify-center min-h-[45vh] text-center">
+          {!showPicker ? (
+            <>
+              <button
+                onClick={() => setShowPicker(true)}
+                className="bg-vesta-red active:bg-vesta-red-dark text-white font-bold px-8 py-4 rounded-2xl text-base shadow-lg shadow-vesta-red/25 active:scale-[0.97] transition-all flex items-center gap-2 mb-5"
+              >
+                <Plus size={20} /> Add exercise
+              </button>
+              <p className="text-slate-400 text-sm italic">{QUOTES[quoteIdx]}</p>
+            </>
+          ) : (
+            <div className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Choose exercise</p>
+                <button onClick={() => setShowPicker(false)} className="text-slate-400 hover:text-slate-600 p-1 -mr-1"><X size={16} /></button>
+              </div>
+              <ExercisePicker exercises={allExercises} onSelect={addExercise} adding={addingExercise} />
+            </div>
+          )}
         </div>
       )}
 
@@ -696,7 +736,7 @@ export default function Home() {
                     const inp = inputs[seId]?.[n] || { weight: '', reps: '' }
                     return (
                       <SwipeToDelete key={n} onDelete={() => deleteSet(seId, n)} disabled={isSaving} silent>
-                      <div className="grid grid-cols-[32px_1fr_1fr_44px_24px] gap-2 items-center py-0.5">
+                      <div className={`grid grid-cols-[32px_1fr_1fr_44px_24px] gap-2 items-center py-0.5 rounded-xl ${pulsingSet[`${seId}-${n}`] ? 'animate-log-pulse' : ''}`}>
                         <span className="text-xs font-mono text-center">
                           {isSaved ? <CheckCircle2 size={14} className="mx-auto text-vesta-red" /> : <span className="text-slate-400">{n}</span>}
                         </span>

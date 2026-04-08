@@ -80,6 +80,7 @@ export default function SessionEdit() {
   const [showZoe, setShowZoe] = useState(false)
 
   const inputRefs = useRef({})
+  const [pulsingSet, setPulsingSet] = useState({})
 
   const recalcTonnage = useCallback((savedSetsSnapshot) => {
     let total = 0
@@ -219,6 +220,8 @@ export default function SessionEdit() {
         if (exData.exercise.name === ZOE_EXERCISE) setShowZoe(true)
       }
       if (!isPR) showToast('Set logged')
+      setPulsingSet(prev => ({ ...prev, [key]: true }))
+      setTimeout(() => setPulsingSet(prev => ({ ...prev, [key]: false })), 500)
     } catch (err) { showToast('Failed to log set — try again', 'error') }
     finally { setSavingSet(prev => ({ ...prev, [key]: false })) }
   }
@@ -418,7 +421,7 @@ export default function SessionEdit() {
                     const inp = inputs[seId]?.[n] || { weight: '', reps: '' }
                     return (
                       <SwipeToDelete key={n} onDelete={() => deleteSet(seId, n)} disabled={isSaving} silent>
-                      <div className="grid grid-cols-[32px_1fr_1fr_44px_24px] gap-2 items-center py-0.5">
+                      <div className={`grid grid-cols-[32px_1fr_1fr_44px_24px] gap-2 items-center py-0.5 rounded-xl ${pulsingSet[`${seId}-${n}`] ? 'animate-log-pulse' : ''}`}>
                         <span className="text-xs font-mono text-center">
                           {isSaved ? <CheckCircle2 size={14} className="mx-auto text-vesta-red" /> : <span className="text-slate-400">{n}</span>}
                         </span>

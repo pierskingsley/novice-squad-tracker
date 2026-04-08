@@ -27,14 +27,26 @@
   to   { transform: translateY(0);     opacity: 1; }
 }
 
+@keyframes log-pulse {
+  0%   { background-color: transparent; }
+  30%  { background-color: rgb(200 16 46 / 0.10); }
+  100% { background-color: transparent; }
+}
+
 @layer utilities {
   .animate-toast-in {
     animation: toast-in 0.18s ease-out both;
+  }
+  .animate-log-pulse {
+    animation: log-pulse 0.5s ease-out;
   }
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
   .pb-safe {
     padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+  .pt-safe-top {
+    padding-top: env(safe-area-inset-top);
   }
 }
