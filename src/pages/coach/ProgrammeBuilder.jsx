@@ -202,11 +202,18 @@ export default function ProgrammeBuilder() {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Assign to athletes</h2>
           <div className="flex items-center gap-3">
-            {athletes.length > 0 && (
-              <button onClick={assignWholeSquad} className="flex items-center gap-1 text-xs text-vesta-navy font-medium hover:text-vesta-navy/70 transition-colors">
-                <Users size={13} /> Whole squad
-              </button>
-            )}
+            {(() => {
+              const assignedIds = new Set(assignments.map(a => a.athlete_id).filter(Boolean))
+              const missing = athletes.filter(a => !assignedIds.has(a.id))
+              if (missing.length === 0) return null
+              const isAll = assignedIds.size === 0
+              return (
+                <button onClick={assignWholeSquad} className="flex items-center gap-1 text-xs text-vesta-navy font-medium hover:text-vesta-navy/70 transition-colors">
+                  <Users size={13} />
+                  {isAll ? 'Whole squad' : `Add ${missing.length} missing`}
+                </button>
+              )
+            })()}
             <button onClick={addAssignment} className="flex items-center gap-1 text-xs text-vesta-red hover:text-vesta-red-dark transition-colors">
               <UserPlus size={13} /> Add
             </button>
