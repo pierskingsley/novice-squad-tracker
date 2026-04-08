@@ -31,4 +31,7 @@ export const DEFAULT_EXERCISES = [
   { name: 'Plank', category: 'accessory' },
 ]
 
-export const TODAY = () => new Date().toISOString().split('T')[0]
+export const TODAY = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
