@@ -17,18 +17,19 @@ const ZOE_EXERCISE = "Zoe's Overhead Press"
 
 const WELCOME_MESSAGES = [
   n => `Welcome back, ${n}`,
+  n => `${n}, are you feeling strong today?`,
+  n => `Sup, ${n}?`,
   n => `Good to see you, ${n}`,
-  n => `Ready to go, ${n}?`,
-  n => `Let's get after it, ${n}`,
 ]
 
 const QUOTES = [
   'What will you lift today?',
-  'Heavy one?',
+  'Did you know Ben loves a squat?',
   'Are you still hungover?',
-  "Let's move some weight.",
-  'Time to earn it.',
-  'Make today count.',
+  'Time to move some serious weight.',
+  'Shifting tin.',
+  'Curls for gurls.',
+  'Zoe said she can lift more than you. Prove her wrong.',
 ]
 
 function fireConfetti() {
@@ -511,7 +512,7 @@ export default function Home() {
     ? [`${prCount} new personal record${prCount > 1 ? 's' : ''}. That's what it's about.`]
     : totalTonnage >= 2000
     ? [`${(totalTonnage / 1000).toFixed(1)} tonnes moved. Serious work today.`]
-    : ['Consistency is everything. Well done.', 'Another one in the books. Keep showing up.', 'Good session. Progress is progress.']
+    : ['Remember, beers buy boats. Get to the bar.', 'Good session. Progress is progress.', 'Say goodbye to those chicken legs.', 'My mooscklezz are getting bigger.', 'Du wurst immer starker']
   const congratsMsg = congratsMessages[new Date().getDay() % congratsMessages.length]
 
   const isIOS = /iphone|ipad|ipod/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
