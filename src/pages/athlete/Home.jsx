@@ -354,7 +354,7 @@ export default function Home() {
         if (exData.exercise.name === ZOE_EXERCISE) setShowZoe(true)
       }
       if (!isPR) showToast('Set logged')
-    } catch (err) { console.error('Error logging set:', err) }
+    } catch (err) { showToast('Failed to log set — try again', 'error') }
     finally { setSavingSet(prev => ({ ...prev, [key]: false })) }
   }
 
@@ -411,7 +411,7 @@ export default function Home() {
       const { data: newSess, error } = await supabase.from('sessions').insert({ athlete_id: user.id, date, completed_at: `${date}T23:59:59.000Z` }).select().single()
       if (error) throw error
       navigate(`/athlete/session/${newSess.id}`)
-    } catch (err) { console.error(err) }
+    } catch (err) { showToast('Failed to add session — try again', 'error') }
     finally { setAddingDate(false) }
   }
 
@@ -634,13 +634,14 @@ export default function Home() {
                         <span className="text-xs font-mono text-center">
                           {isSaved ? <CheckCircle2 size={14} className="mx-auto text-vesta-red" /> : <span className="text-slate-400">{n}</span>}
                         </span>
-                        <input type="number" inputMode="decimal" enterKeyHint="next"
+                        <input type="text" inputMode="decimal" enterKeyHint="next"
                           ref={el => { inputRefs.current[`${seId}-${n}-weight`] = el }}
                           value={inp.weight} onChange={e => updateInput(seId, n, 'weight', e.target.value)}
                           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); inputRefs.current[`${seId}-${n}-reps`]?.focus() } }}
+                          onBlur={() => { if (inp.weight && !inp.reps) inputRefs.current[`${seId}-${n}-reps`]?.focus() }}
                           placeholder="kg"
                           className={`bg-slate-100 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300'}`} />
-                        <input type="number" inputMode="numeric" enterKeyHint="done"
+                        <input type="text" inputMode="numeric" enterKeyHint="done"
                           ref={el => { inputRefs.current[`${seId}-${n}-reps`] = el }}
                           value={inp.reps} onChange={e => updateInput(seId, n, 'reps', e.target.value)}
                           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); logSet(seId, n) } }}

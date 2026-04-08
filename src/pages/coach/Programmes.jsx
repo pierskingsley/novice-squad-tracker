@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext'
 import Spinner from '../../components/ui/Spinner'
 import Modal from '../../components/ui/Modal'
 import { Plus, Copy, Edit2, ChevronRight, ClipboardList, Users } from 'lucide-react'
+import { useToast } from '../../context/ToastContext'
 
 export default function Programmes() {
   const { user } = useAuth()
@@ -13,6 +14,7 @@ export default function Programmes() {
   const [loading, setLoading] = useState(true)
   const [duplicating, setDuplicating] = useState(null)
   const [confirmDup, setConfirmDup] = useState(null)
+  const { showToast } = useToast()
 
   useEffect(() => { if (user) load() }, [user])
 
@@ -36,7 +38,7 @@ export default function Programmes() {
         await supabase.from('programme_exercises').insert(full.map(({ id: _id, programme_id: _pid, ...rest }) => ({ ...rest, programme_id: newProg.id })))
       }
       await load()
-    } catch (err) { console.error(err) }
+    } catch (err) { showToast('Failed to duplicate programme — try again', 'error') }
     finally { setDuplicating(null); setConfirmDup(null) }
   }
 
