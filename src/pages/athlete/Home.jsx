@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import { TODAY } from '../../lib/constants'
 import Spinner from '../../components/ui/Spinner'
+import { HomePageSkeleton } from '../../components/ui/Skeleton'
 import Modal from '../../components/ui/Modal'
 import SwipeToDelete from '../../components/ui/SwipeToDelete'
 import { useToast } from '../../context/ToastContext'
@@ -166,9 +167,11 @@ export default function Home() {
   const inputRefs = useRef({})
   const today = TODAY()
 
-  const recalcTonnage = useCallback((savedSetsSnapshot) => {
+  const recalcTonnage = useCallback((savedSetsSnapshot, exMapSnapshot) => {
     let total = 0
-    for (const setsByNum of Object.values(savedSetsSnapshot)) {
+    for (const [seId, setsByNum] of Object.entries(savedSetsSnapshot)) {
+      if ((exMapSnapshot || {})[seId]?.exercise?.input_type !== 'weighted' &&
+          (exMapSnapshot || {})[seId]?.exercise?.input_type !== undefined) continue
       for (const s of Object.values(setsByNum)) {
         if (s) total += s.weight * s.reps
       }
@@ -195,7 +198,7 @@ export default function Home() {
     setLoading(true); setError('')
     try {
       const [{ data: exList }, { data: existingSess }, { data: past }] = await Promise.all([
-        supabase.from('exercises').select('id, name, category').order('name'),
+        supabase.from('exercises').select('id, name, category, input_type').order('name'),
         supabase.from('sessions').select('*').eq('athlete_id', user.id).eq('date', today).maybeSingle(),
         supabase.from('sessions')
           .select('id, date, total_tonnage, session_exercises(id, exercises(name))')
@@ -286,7 +289,7 @@ export default function Home() {
   async function loadSessionExercises(sessionId, pastSessionIds = []) {
     const { data: seRows, error: seError } = await supabase
       .from('session_exercises')
-      .select('*, exercises(id, name)')
+      .select('*, exercises(id, name, input_type)')
       .eq('session_id', sessionId).order('order_index')
     if (seError) { setError(seError.message); return }
     if (!seRows || seRows.length === 0) return
@@ -302,6 +305,7 @@ export default function Home() {
       newExMap[se.id] = { sessionExercise: se, exercise: se.exercises }
       newExOrder.push(se.id)
       newExpanded[se.id] = true
+      const inputType = se.exercises?.input_type || 'weighted'
       const setsForThis = existingSets?.filter(s => s.session_exercise_id === se.id) || []
       const numSets = Math.max(3, setsForThis.length)
       newInputs[se.id] = {}
@@ -309,13 +313,19 @@ export default function Home() {
       for (let n = 1; n <= numSets; n++) {
         const saved = setsForThis.find(s => s.set_number === n)
         newSaved[se.id][n] = saved ? { id: saved.id, weight: saved.weight, reps: saved.reps } : null
-        newInputs[se.id][n] = { weight: saved ? String(saved.weight) : '', reps: saved ? String(saved.reps) : '' }
+        if (inputType === 'timed') {
+          newInputs[se.id][n] = { reps: saved ? String(saved.reps) : '', duration: saved ? String(saved.weight) : '' }
+        } else if (inputType === 'bodyweight') {
+          newInputs[se.id][n] = { reps: saved ? String(saved.reps) : '' }
+        } else {
+          newInputs[se.id][n] = { weight: saved ? String(saved.weight) : '', reps: saved ? String(saved.reps) : '' }
+        }
       }
     }
     setExerciseMap(newExMap); setExerciseOrder(newExOrder); setInputs(newInputs)
     setSavedSets(newSaved); setExpanded(newExpanded)
     setPrevSets(lastTime)
-    recalcTonnage(newSaved)
+    recalcTonnage(newSaved, newExMap)
   }
 
   async function addExercise(exerciseId) {
@@ -330,14 +340,18 @@ export default function Home() {
       const { data: newSE, error: ie } = await supabase
         .from('session_exercises')
         .insert({ session_id: sess.id, exercise_id: exerciseId, order_index: exerciseOrder.length, notes: '' })
-        .select('*, exercises(id, name)').single()
+        .select('*, exercises(id, name, input_type)').single()
       if (ie) throw ie
       const seId = newSE.id
+      const inputType = newSE.exercises?.input_type || 'weighted'
+      const emptyInput = inputType === 'timed' ? { reps: '', duration: '' }
+        : inputType === 'bodyweight' ? { reps: '' }
+        : { weight: '', reps: '' }
       setExerciseMap(prev => ({ ...prev, [seId]: { sessionExercise: newSE, exercise: newSE.exercises } }))
       setExerciseOrder(prev => [...prev, seId])
       setExpanded(prev => ({ ...prev, [seId]: true }))
       setSavedSets(prev => ({ ...prev, [seId]: { 1: null, 2: null, 3: null } }))
-      setInputs(prev => ({ ...prev, [seId]: { 1: { weight: '', reps: '' }, 2: { weight: '', reps: '' }, 3: { weight: '', reps: '' } } }))
+      setInputs(prev => ({ ...prev, [seId]: { 1: { ...emptyInput }, 2: { ...emptyInput }, 3: { ...emptyInput } } }))
       setShowPicker(false)
       const pastIds = pastSessions.map(s => s.id)
       fetchLastTimeSets([exerciseId], pastIds).then(lt => {
@@ -355,8 +369,12 @@ export default function Home() {
   function addSet(seId) {
     const existing = getSetNums(seId)
     const n = existing.length > 0 ? Math.max(...existing) + 1 : 1
+    const inputType = exerciseMap[seId]?.exercise?.input_type || 'weighted'
+    const emptyInput = inputType === 'timed' ? { reps: '', duration: '' }
+      : inputType === 'bodyweight' ? { reps: '' }
+      : { weight: '', reps: '' }
     setSavedSets(prev => ({ ...prev, [seId]: { ...prev[seId], [n]: null } }))
-    setInputs(prev => ({ ...prev, [seId]: { ...prev[seId], [n]: { weight: '', reps: '' } } }))
+    setInputs(prev => ({ ...prev, [seId]: { ...prev[seId], [n]: { ...emptyInput } } }))
   }
 
   async function deleteSet(seId, n) {
@@ -366,7 +384,7 @@ export default function Home() {
       const copy = { ...prev[seId] }
       delete copy[n]
       const next = { ...prev, [seId]: copy }
-      recalcTonnage(next)
+      recalcTonnage(next, exerciseMap)
       return next
     })
     setInputs(prev => {
@@ -376,7 +394,8 @@ export default function Home() {
     })
     // Update tonnage in DB
     setTimeout(() => {
-      const t = Object.values(savedSets).reduce((sum, sets) => {
+      const t = Object.entries(savedSets).reduce((sum, [sid, sets]) => {
+        if ((exerciseMap[sid]?.exercise?.input_type || 'weighted') !== 'weighted') return sum
         return sum + Object.values(sets).reduce((s2, s) => s2 + (s ? s.weight * s.reps : 0), 0)
       }, 0)
       if (session) supabase.from('sessions').update({ total_tonnage: Math.round(t * 10) / 10 }).eq('id', session.id)
@@ -388,9 +407,19 @@ export default function Home() {
   }
 
   async function logSet(seId, n) {
-    const { weight: wStr, reps: rStr } = inputs[seId]?.[n] || {}
-    const weight = parseFloat(wStr), reps = parseInt(rStr)
-    if (!weight || !reps || isNaN(weight) || isNaN(reps)) return
+    const inp = inputs[seId]?.[n] || {}
+    const inputType = exerciseMap[seId]?.exercise?.input_type || 'weighted'
+    let weight = 0, reps = 0
+    if (inputType === 'timed') {
+      reps = parseInt(inp.reps); weight = parseInt(inp.duration)
+      if (!reps || !weight || isNaN(reps) || isNaN(weight)) return
+    } else if (inputType === 'bodyweight') {
+      reps = parseInt(inp.reps)
+      if (!reps || isNaN(reps)) return
+    } else {
+      weight = parseFloat(inp.weight); reps = parseInt(inp.reps)
+      if (!weight || !reps || isNaN(weight) || isNaN(reps)) return
+    }
     const key = `${seId}-${n}`
     setSavingSet(prev => ({ ...prev, [key]: true }))
     try {
@@ -404,14 +433,18 @@ export default function Home() {
         setRow = data
       }
       const newSaved = { ...savedSets, [seId]: { ...savedSets[seId], [n]: { id: setRow.id, weight: setRow.weight, reps: setRow.reps } } }
-      setSavedSets(newSaved); recalcTonnage(newSaved)
+      setSavedSets(newSaved)
+      recalcTonnage(newSaved, exerciseMap)
       let t = 0
-      for (const sets of Object.values(newSaved)) for (const s of Object.values(sets)) if (s) t += s.weight * s.reps
+      for (const [sid, sets] of Object.entries(newSaved)) {
+        if ((exerciseMap[sid]?.exercise?.input_type || 'weighted') !== 'weighted') continue
+        for (const s of Object.values(sets)) if (s) t += s.weight * s.reps
+      }
       supabase.from('sessions').update({ total_tonnage: Math.round(t * 10) / 10 }).eq('id', session.id)
 
       const exData = exerciseMap[seId]
       let isPR = false
-      if (exData) {
+      if (exData && inputType === 'weighted') {
         const exerciseId = exData.exercise.id
         const { data: pb } = await supabase.from('personal_bests').select('weight').eq('athlete_id', user.id).eq('exercise_id', exerciseId).maybeSingle()
         if (!pb || weight > pb.weight) {
@@ -520,7 +553,7 @@ export default function Home() {
 
   const { pullDistance, refreshing, isTriggered, handlers: ptrHandlers } = usePullToRefresh(load)
 
-  if (loading && !refreshing) return <div className="flex items-center justify-center min-h-screen"><Spinner size="lg" /></div>
+  if (loading && !refreshing) return <HomePageSkeleton />
 
   if (error) return (
     <div className="px-4 pt-16 text-center">
@@ -688,13 +721,14 @@ export default function Home() {
         {[...exerciseOrder].reverse().map(seId => {
           const { exercise } = exerciseMap[seId] || {}
           if (!exercise) return null
+          const inputType = exercise.input_type || 'weighted'
           const setNums = getSetNums(seId)
           const isExpanded = expanded[seId] ?? true
           const isPR = prBadges[seId]
           const last = prevSets[exercise.id] || []
           const lastWeights = last.map(s => s.weight).filter(Boolean)
           const allLastCompleted = last.length > 0 && last.every(s => s.weight && s.reps)
-          const suggestedWeight = allLastCompleted ? Math.max(...lastWeights) + 2.5 : null
+          const suggestedWeight = inputType === 'weighted' && allLastCompleted ? Math.max(...lastWeights) + 2.5 : null
 
           return (
             <div key={seId} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
@@ -714,45 +748,62 @@ export default function Home() {
               {last.length > 0 && (
                 <div className="px-4 pb-2 flex items-center gap-2 flex-wrap">
                   <span className="text-xs text-slate-400">Last time:</span>
-                  {last.map((s, i) => <span key={i} className="text-xs bg-slate-100 text-slate-500 rounded-md px-1.5 py-0.5">{s.weight}kg×{s.reps}</span>)}
+                  {last.map((s, i) => (
+                    <span key={i} className="text-xs bg-slate-100 text-slate-500 rounded-md px-1.5 py-0.5">
+                      {inputType === 'timed' ? `${s.reps}×${s.weight}s` : inputType === 'bodyweight' ? `×${s.reps}` : `${s.weight}kg×${s.reps}`}
+                    </span>
+                  ))}
                   {suggestedWeight && <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-md px-1.5 py-0.5 font-medium">Try {suggestedWeight}kg ↑</span>}
                 </div>
               )}
 
               {isExpanded && (
                 <div className="px-4 pb-4 space-y-2">
-                  <div className="grid grid-cols-[32px_1fr_1fr_44px_24px] gap-2 px-1">
+                  <div className={`grid gap-2 px-1 ${inputType === 'bodyweight' ? 'grid-cols-[32px_1fr_44px_24px]' : 'grid-cols-[32px_1fr_1fr_44px_24px]'}`}>
                     <span className="text-xs text-slate-400 text-center">#</span>
-                    <span className="text-xs text-slate-400 text-center">kg</span>
-                    <span className="text-xs text-slate-400 text-center">reps</span>
-                    <span />
-                    <span />
+                    {inputType === 'timed'      && <><span className="text-xs text-slate-400 text-center">reps</span><span className="text-xs text-slate-400 text-center">secs</span></>}
+                    {inputType === 'bodyweight' && <span className="text-xs text-slate-400 text-center">reps</span>}
+                    {inputType === 'weighted'   && <><span className="text-xs text-slate-400 text-center">kg</span><span className="text-xs text-slate-400 text-center">reps</span></>}
+                    <span /><span />
                   </div>
 
                   {setNums.map(n => {
                     const isSaved = !!savedSets[seId]?.[n]
                     const isSaving = savingSet[`${seId}-${n}`]
-                    const inp = inputs[seId]?.[n] || { weight: '', reps: '' }
+                    const inp = inputs[seId]?.[n] || {}
+                    const inputClass = `bg-slate-100 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300'}`
+                    const canLog = inputType === 'weighted' ? (inp.weight && inp.reps) : inputType === 'timed' ? (inp.reps && inp.duration) : inp.reps
                     return (
                       <SwipeToDelete key={n} onDelete={() => deleteSet(seId, n)} disabled={isSaving} silent>
-                      <div className={`grid grid-cols-[32px_1fr_1fr_44px_24px] gap-2 items-center py-0.5 rounded-xl ${pulsingSet[`${seId}-${n}`] ? 'animate-log-pulse' : ''}`}>
+                      <div className={`grid gap-2 items-center py-0.5 rounded-xl ${inputType === 'bodyweight' ? 'grid-cols-[32px_1fr_44px_24px]' : 'grid-cols-[32px_1fr_1fr_44px_24px]'} ${pulsingSet[`${seId}-${n}`] ? 'animate-log-pulse' : ''}`}>
                         <span className="text-xs font-mono text-center">
                           {isSaved ? <CheckCircle2 size={14} className="mx-auto text-vesta-red" /> : <span className="text-slate-400">{n}</span>}
                         </span>
-                        <input type="text" inputMode="decimal" enterKeyHint="next"
-                          ref={el => { inputRefs.current[`${seId}-${n}-weight`] = el }}
-                          value={inp.weight} onChange={e => updateInput(seId, n, 'weight', e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); inputRefs.current[`${seId}-${n}-reps`]?.focus() } }}
-                          onBlur={() => { if (inp.weight && !inp.reps) inputRefs.current[`${seId}-${n}-reps`]?.focus() }}
-                          placeholder="kg"
-                          className={`bg-slate-100 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300'}`} />
-                        <input type="text" inputMode="numeric" enterKeyHint="done"
+
+                        {inputType === 'weighted' && (
+                          <input type="text" inputMode="decimal" enterKeyHint="next"
+                            ref={el => { inputRefs.current[`${seId}-${n}-weight`] = el }}
+                            value={inp.weight ?? ''} onChange={e => updateInput(seId, n, 'weight', e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); inputRefs.current[`${seId}-${n}-reps`]?.focus() } }}
+                            onBlur={() => { if (inp.weight && !inp.reps) inputRefs.current[`${seId}-${n}-reps`]?.focus() }}
+                            placeholder="kg" className={inputClass} />
+                        )}
+
+                        <input type="text" inputMode="numeric" enterKeyHint={inputType === 'weighted' ? 'next' : 'done'}
                           ref={el => { inputRefs.current[`${seId}-${n}-reps`] = el }}
-                          value={inp.reps} onChange={e => updateInput(seId, n, 'reps', e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); logSet(seId, n) } }}
-                          placeholder="reps"
-                          className={`bg-slate-100 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300'}`} />
-                        <button onClick={() => logSet(seId, n)} disabled={isSaving || !inp.weight || !inp.reps}
+                          value={inp.reps ?? ''} onChange={e => updateInput(seId, n, 'reps', e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); inputType === 'timed' ? inputRefs.current[`${seId}-${n}-duration`]?.focus() : logSet(seId, n) } }}
+                          placeholder="reps" className={inputClass} />
+
+                        {inputType === 'timed' && (
+                          <input type="text" inputMode="numeric" enterKeyHint="done"
+                            ref={el => { inputRefs.current[`${seId}-${n}-duration`] = el }}
+                            value={inp.duration ?? ''} onChange={e => updateInput(seId, n, 'duration', e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); logSet(seId, n) } }}
+                            placeholder="secs" className={inputClass} />
+                        )}
+
+                        <button onClick={() => logSet(seId, n)} disabled={isSaving || !canLog}
                           className={`h-9 w-full rounded-lg text-xs font-semibold transition-all disabled:opacity-40 flex items-center justify-center ${isSaved ? 'bg-vesta-red/10 text-vesta-red hover:bg-vesta-red/20' : 'bg-vesta-red text-white hover:bg-vesta-red-dark'}`}>
                           {isSaving ? <Spinner size="sm" /> : isSaved ? '✓' : 'Log'}
                         </button>

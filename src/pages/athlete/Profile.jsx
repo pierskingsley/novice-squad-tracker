@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Spinner from '../../components/ui/Spinner'
+import { ProfilePageSkeleton } from '../../components/ui/Skeleton'
 import { Trophy, LogOut, User, Dumbbell, Flame, Activity } from 'lucide-react'
 
 export default function Profile() {
@@ -69,7 +70,7 @@ export default function Profile() {
     setStats({ sessions: sessions.length, tonnage, streak: best })
   }
 
-  if (loading) return <div className="flex justify-center pt-20"><Spinner size="lg" /></div>
+  if (loading) return <ProfilePageSkeleton />
 
   return (
     <div className="px-4 pt-6 pb-10">

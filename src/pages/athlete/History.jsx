@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Spinner from '../../components/ui/Spinner'
+import { HistoryPageSkeleton } from '../../components/ui/Skeleton'
 import { usePullToRefresh } from '../../hooks/usePullToRefresh'
 import { ChevronDown, ChevronUp, Trophy, Calendar, RotateCcw } from 'lucide-react'
 
@@ -53,7 +54,7 @@ export default function History() {
   }
 
   if (loading && !refreshing) {
-    return <div className="flex justify-center pt-20"><Spinner size="lg" /></div>
+    return <HistoryPageSkeleton />
   }
 
   return (
