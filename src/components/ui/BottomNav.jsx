@@ -35,8 +35,13 @@ export default function BottomNav() {
               }`
             }
           >
-            <Icon size={22} strokeWidth={1.75} />
-            {label}
+            {({ isActive }) => (
+              <>
+                <Icon size={22} strokeWidth={1.75} />
+                {label}
+                <span className={`w-1 h-1 rounded-full bg-vesta-red transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-0'}`} />
+              </>
+            )}
           </NavLink>
         ))}
       </div>

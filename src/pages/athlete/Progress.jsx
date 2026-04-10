@@ -5,7 +5,7 @@ import Spinner from '../../components/ui/Spinner'
 import { usePullToRefresh } from '../../hooks/usePullToRefresh'
 import { TrendingUp, ChevronDown, RotateCcw } from 'lucide-react'
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts'
 
 const CHART_STYLE = {
@@ -195,7 +195,13 @@ export default function Progress() {
                   <div className="text-xs text-slate-400">Heaviest set per session (kg)</div>
                 </div>
                 <ResponsiveContainer width="100%" height={180}>
-                  <LineChart data={maxWeightData} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
+                  <AreaChart data={maxWeightData} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
+                    <defs>
+                      <linearGradient id="gradRed" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#C8102E" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="#C8102E" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid {...CHART_STYLE.cartesian} />
                     <XAxis dataKey="date" {...CHART_STYLE.axis} />
                     <YAxis {...CHART_STYLE.axis} />
@@ -203,15 +209,25 @@ export default function Progress() {
                       {...CHART_STYLE.tooltip}
                       formatter={(v) => [`${v}kg`, 'Max weight']}
                     />
-                    <Line
+                    {maxWeightData.length > 0 && (
+                      <ReferenceLine
+                        y={Math.max(...maxWeightData.map(d => d.weight))}
+                        stroke="#C8102E"
+                        strokeDasharray="4 4"
+                        strokeOpacity={0.4}
+                        label={{ value: 'PB', position: 'insideTopRight', fill: '#C8102E', fontSize: 10, opacity: 0.6 }}
+                      />
+                    )}
+                    <Area
                       type="monotone"
                       dataKey="weight"
                       stroke="#C8102E"
                       strokeWidth={2}
+                      fill="url(#gradRed)"
                       dot={<CustomDot />}
                       activeDot={{ r: 5, fill: '#C8102E' }}
                     />
-                  </LineChart>
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
 
@@ -222,7 +238,13 @@ export default function Progress() {
                   <div className="text-xs text-slate-400">Total volume per session for this exercise (kg)</div>
                 </div>
                 <ResponsiveContainer width="100%" height={180}>
-                  <LineChart data={tonnageData} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
+                  <AreaChart data={tonnageData} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
+                    <defs>
+                      <linearGradient id="gradNavy" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#003087" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="#003087" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid {...CHART_STYLE.cartesian} />
                     <XAxis dataKey="date" {...CHART_STYLE.axis} />
                     <YAxis {...CHART_STYLE.axis} />
@@ -230,15 +252,25 @@ export default function Progress() {
                       {...CHART_STYLE.tooltip}
                       formatter={(v) => [`${v}kg`, 'Tonnage']}
                     />
-                    <Line
+                    {tonnageData.length > 0 && (
+                      <ReferenceLine
+                        y={Math.max(...tonnageData.map(d => d.tonnage))}
+                        stroke="#003087"
+                        strokeDasharray="4 4"
+                        strokeOpacity={0.4}
+                        label={{ value: 'PB', position: 'insideTopRight', fill: '#003087', fontSize: 10, opacity: 0.6 }}
+                      />
+                    )}
+                    <Area
                       type="monotone"
                       dataKey="tonnage"
                       stroke="#003087"
                       strokeWidth={2}
+                      fill="url(#gradNavy)"
                       dot={<CustomDotNavy />}
                       activeDot={{ r: 5, fill: '#003087' }}
                     />
-                  </LineChart>
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
             </div>

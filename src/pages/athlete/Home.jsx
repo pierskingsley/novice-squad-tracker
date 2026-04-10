@@ -463,6 +463,7 @@ export default function Home() {
         if (exData.exercise.name === ZOE_EXERCISE) setShowZoe(true)
       }
       if (!isPR) showToast('Set logged')
+      if (navigator.vibrate) navigator.vibrate(10)
       setPulsingSet(prev => ({ ...prev, [key]: true }))
       setTimeout(() => setPulsingSet(prev => ({ ...prev, [key]: false })), 500)
     } catch (err) { showToast('Failed to log set — try again', 'error') }
