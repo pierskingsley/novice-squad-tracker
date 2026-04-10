@@ -31,6 +31,15 @@ const QUOTES = [
   'Shifting tin.',
   'Curls for gurls.',
   'Zoe said she can lift more than you. Prove her wrong.',
+  'Did you know your 2k correlates to your max watts? Better get squatting.',
+  'Chicken legs are an ick.',
+]
+
+const TONNAGE_MILESTONES = [
+  { kg: 1000, message: 'Welcome to the One Tonne Club 🏋️' },
+  { kg: 2000, message: 'Zoe once said she can lift an elephant with one arm' },
+  { kg: 3000, message: 'Ben drinks 3000kg of milk in a week' },
+  { kg: 5000, message: 'Okay, this is actually kinda impressive.' },
 ]
 
 function fireConfetti() {
@@ -165,6 +174,7 @@ export default function Home() {
   const [quoteIdx] = useState(() => Math.floor(Date.now() / 3600000) % QUOTES.length)
 
   const inputRefs = useRef({})
+  const hitMilestones = useRef(new Set())
   const today = TODAY()
 
   const recalcTonnage = useCallback((savedSetsSnapshot, exMapSnapshot) => {
@@ -258,6 +268,7 @@ export default function Home() {
       const pastIds = (past || []).map(s => s.id)
       await loadSessionExercises(sess.id, pastIds)
       setSession(sess)
+      hitMilestones.current = new Set()
       setNotes(sess.notes || '')
     } catch (err) { setError(err.message) }
     finally { setLoading(false) }
@@ -447,6 +458,13 @@ export default function Home() {
         for (const s of Object.values(sets)) if (s) t += s.weight * s.reps
       }
       supabase.from('sessions').update({ total_tonnage: Math.round(t * 10) / 10 }).eq('id', session.id)
+
+      for (const { kg, message } of TONNAGE_MILESTONES) {
+        if (t >= kg && !hitMilestones.current.has(kg)) {
+          hitMilestones.current.add(kg)
+          showToast(message, 'milestone')
+        }
+      }
 
       const exData = exerciseMap[seId]
       let isPR = false
