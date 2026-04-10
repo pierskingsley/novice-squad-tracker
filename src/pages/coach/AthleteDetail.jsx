@@ -50,8 +50,8 @@ export default function AthleteDetail() {
           <ArrowLeft size={20} />
         </button>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-vesta-navy/10 flex items-center justify-center">
-            <span className="text-base font-bold text-vesta-navy">{athlete.name.charAt(0).toUpperCase()}</span>
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-vesta-red to-vesta-navy flex items-center justify-center">
+            <span className="text-base font-bold text-white">{athlete.name.charAt(0).toUpperCase()}</span>
           </div>
           <div>
             <h1 className="text-lg font-bold text-slate-900">{athlete.name}</h1>
@@ -73,9 +73,12 @@ export default function AthleteDetail() {
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden mb-5 shadow-sm">
           <div className="divide-y divide-slate-100">
             {pbs.slice(0, 10).map((pb, i) => (
-              <div key={i} className="flex items-center justify-between px-4 py-3">
+              <div key={i} className={`flex items-center justify-between px-4 py-3 ${i === 0 ? 'bg-amber-50' : ''}`}>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-slate-400 w-4 text-right">{i + 1}</span>
+                  {i === 0
+                    ? <span className="text-xs w-4 text-right">🏆</span>
+                    : <span className="text-xs text-slate-400 w-4 text-right">{i + 1}</span>
+                  }
                   <span className="text-sm text-slate-900">{pb.exercises?.name}</span>
                 </div>
                 <span className="text-sm font-bold text-vesta-red">{pb.weight}kg × {pb.reps}</span>

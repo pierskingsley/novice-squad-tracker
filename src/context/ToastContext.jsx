@@ -25,7 +25,7 @@ function Toast({ toast, onDismiss }) {
 
   return (
     <div
-      className={`flex items-start gap-2.5 bg-white rounded-xl shadow-lg border border-slate-200 border-l-4 ${borders[toast.type] ?? borders.success} px-3.5 py-3 animate-toast-in`}
+      className={`flex items-start gap-2.5 rounded-xl shadow-lg border border-slate-200 border-l-4 ${borders[toast.type] ?? borders.success} px-3.5 py-3 animate-toast-in ${toast.type === 'pr' ? 'bg-amber-50' : 'bg-white'}`}
     >
       {icons[toast.type] ?? icons.success}
       <p className="text-sm font-medium text-slate-800 flex-1 leading-tight">{toast.message}</p>

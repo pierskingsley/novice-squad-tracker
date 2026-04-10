@@ -510,7 +510,7 @@ export default function SessionEdit() {
         <button
           onClick={markComplete}
           disabled={finishing}
-          className="w-full mt-1 mb-2 bg-vesta-red active:bg-vesta-red-dark text-white font-bold py-4 rounded-2xl text-sm shadow-lg shadow-vesta-red/20 transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
+          className="w-full mt-1 mb-2 bg-gradient-to-r from-vesta-red to-vesta-red-dark active:opacity-90 text-white font-bold py-4 rounded-2xl text-sm shadow-lg shadow-vesta-red/30 transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
         >
           {finishing ? <Spinner size="sm" /> : <CheckCircle2 size={16} />}
           Finish session

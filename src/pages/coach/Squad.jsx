@@ -46,8 +46,8 @@ export default function Squad() {
               className="w-full flex items-center justify-between px-4 py-4 hover:bg-slate-50 transition-colors text-left"
             >
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-vesta-navy/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-bold text-vesta-navy">{athlete.name.charAt(0).toUpperCase()}</span>
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-vesta-red to-vesta-navy flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-bold text-white">{athlete.name.charAt(0).toUpperCase()}</span>
                 </div>
                 <div>
                   <div className="text-sm font-medium text-slate-900">{athlete.name}</div>

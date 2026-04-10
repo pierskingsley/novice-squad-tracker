@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Spinner from '../../components/ui/Spinner'
 import { ProfilePageSkeleton } from '../../components/ui/Skeleton'
-import { Trophy, LogOut, User, Dumbbell, Flame, Activity } from 'lucide-react'
+import { Trophy, LogOut, Dumbbell, Flame, Activity } from 'lucide-react'
 
 export default function Profile() {
   const { user, profile, signOut } = useAuth()
@@ -75,8 +75,8 @@ export default function Profile() {
   return (
     <div className="px-4 pt-6 pb-10">
       <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-5 flex items-center gap-4 shadow-sm">
-        <div className="w-14 h-14 rounded-2xl bg-vesta-navy/10 flex items-center justify-center flex-shrink-0">
-          <User size={26} className="text-vesta-navy" />
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-vesta-red to-vesta-navy flex items-center justify-center flex-shrink-0">
+          <span className="text-2xl font-bold text-white">{profile?.name?.charAt(0).toUpperCase() ?? '?'}</span>
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-lg font-bold text-slate-900 truncate">{profile?.name || 'Athlete'}</div>
@@ -96,12 +96,12 @@ export default function Profile() {
           <div className="grid grid-cols-3 divide-x divide-slate-100">
             <div className="flex flex-col items-center py-4 gap-1">
               <Activity size={16} className="text-vesta-navy mb-0.5" />
-              <span className="text-xl font-bold text-slate-900">{stats.sessions}</span>
+              <span className="text-xl font-bold text-vesta-navy">{stats.sessions}</span>
               <span className="text-xs text-slate-400">Sessions</span>
             </div>
             <div className="flex flex-col items-center py-4 gap-1">
-              <Dumbbell size={16} className="text-vesta-navy mb-0.5" />
-              <span className="text-xl font-bold text-slate-900">
+              <Dumbbell size={16} className="text-vesta-red mb-0.5" />
+              <span className="text-xl font-bold text-vesta-red">
                 {stats.tonnage >= 1000
                   ? `${(stats.tonnage / 1000).toFixed(1)}t`
                   : `${Math.round(stats.tonnage)}kg`}
@@ -109,8 +109,8 @@ export default function Profile() {
               <span className="text-xs text-slate-400">Lifted</span>
             </div>
             <div className="flex flex-col items-center py-4 gap-1">
-              <Flame size={16} className="text-vesta-navy mb-0.5" />
-              <span className="text-xl font-bold text-slate-900">{stats.streak}</span>
+              <Flame size={16} className="text-amber-500 mb-0.5" />
+              <span className="text-xl font-bold text-amber-500">{stats.streak}</span>
               <span className="text-xs text-slate-400">Best streak</span>
             </div>
           </div>
@@ -132,9 +132,12 @@ export default function Profile() {
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="divide-y divide-slate-100">
             {pbs.map((pb, i) => (
-              <div key={i} className="flex items-center justify-between px-4 py-3.5">
+              <div key={i} className={`flex items-center justify-between px-4 py-3.5 ${i === 0 ? 'bg-amber-50' : ''}`}>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-slate-400 w-4 text-right font-mono">{i + 1}</span>
+                  {i === 0
+                    ? <span className="text-xs w-4 text-right">🏆</span>
+                    : <span className="text-xs text-slate-400 w-4 text-right">{i + 1}</span>
+                  }
                   <span className="text-sm text-slate-900 font-medium">{pb.exercises?.name}</span>
                 </div>
                 <div className="text-right">
