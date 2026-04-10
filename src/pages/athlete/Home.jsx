@@ -329,6 +329,12 @@ export default function Home() {
   }
 
   async function addExercise(exerciseId) {
+    const alreadyAdded = Object.values(exerciseMap).some(e => e.exercise?.id === exerciseId)
+    if (alreadyAdded) {
+      showToast('Exercise already in session')
+      setShowPicker(false)
+      return
+    }
     setAddingExercise(true)
     try {
       let sess = session
