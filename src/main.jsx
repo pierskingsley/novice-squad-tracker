@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
+import { ThemeProvider } from './context/ThemeContext.jsx'
 
 // Reload the page whenever a new service worker takes control,
 // so users always get the latest version without manual reinstall.
@@ -13,6 +14,8 @@ if (navigator.serviceWorker) {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider>
+      <App />
+    </ThemeProvider>
   </React.StrictMode>,
 )

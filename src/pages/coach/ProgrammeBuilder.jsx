@@ -7,9 +7,9 @@ import { ArrowLeft, Plus, Trash2, ChevronDown, UserPlus, Users } from 'lucide-re
 
 function ExerciseRow({ ex, onChange, onRemove }) {
   return (
-    <div className="bg-slate-50 rounded-xl p-3 space-y-2.5 border border-slate-100">
+    <div className="bg-slate-50 dark:bg-zinc-800/50 rounded-xl p-3 space-y-2.5 border border-slate-100 dark:border-zinc-700">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-slate-900">{ex.exerciseName}</span>
+        <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{ex.exerciseName}</span>
         <button onClick={onRemove} className="text-slate-400 hover:text-red-500 transition-colors p-1">
           <Trash2 size={14} />
         </button>
@@ -21,17 +21,17 @@ function ExerciseRow({ ex, onChange, onRemove }) {
           { key: 'prescribed_weight', label: 'kg', placeholder: '0' },
         ].map(({ key, label, placeholder }) => (
           <div key={key}>
-            <label className="text-xs text-slate-400 block mb-1">{label}</label>
+            <label className="text-xs text-slate-400 dark:text-slate-500 block mb-1">{label}</label>
             <input
               type="number" inputMode="decimal" value={ex[key] ?? ''} onChange={e => onChange(key, e.target.value)} placeholder={placeholder}
-              className="w-full bg-white border border-slate-200 rounded-lg px-2 py-2 text-sm text-slate-900 text-center placeholder-slate-400 focus:outline-none focus:border-vesta-red transition-colors"
+              className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-2 text-sm text-slate-900 dark:text-slate-50 text-center placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-vesta-red transition-colors"
             />
           </div>
         ))}
       </div>
       <input
         type="text" value={ex.notes || ''} onChange={e => onChange('notes', e.target.value)} placeholder="Coach notes (optional)"
-        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-vesta-red transition-colors"
+        className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-vesta-red transition-colors"
       />
     </div>
   )
@@ -43,7 +43,7 @@ function AssignmentRow({ asgn, athletes, onChange, onRemove }) {
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <select value={asgn.athlete_id} onChange={e => onChange('athlete_id', e.target.value)}
-            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 pr-8 text-sm text-slate-900 appearance-none focus:outline-none focus:border-vesta-red transition-colors">
+            className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2.5 pr-8 text-sm text-slate-900 dark:text-slate-50 appearance-none focus:outline-none focus:border-vesta-red transition-colors">
             <option value="">Select athlete</option>
             {athletes.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
@@ -52,7 +52,7 @@ function AssignmentRow({ asgn, athletes, onChange, onRemove }) {
         <button onClick={onRemove} className="text-slate-400 hover:text-red-500 transition-colors p-1.5"><Trash2 size={14} /></button>
       </div>
       <input type="date" value={asgn.assigned_date} onChange={e => onChange('assigned_date', e.target.value)}
-        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-vesta-red transition-colors" />
+        className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-slate-900 dark:text-slate-50 focus:outline-none focus:border-vesta-red transition-colors" />
     </div>
   )
 }
@@ -162,22 +162,22 @@ export default function ProgrammeBuilder() {
   return (
     <div className="px-4 pt-5 pb-10">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate('/coach/programmes')} className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors -ml-1">
+        <button onClick={() => navigate('/coach/programmes')} className="p-2 rounded-xl text-slate-400 dark:text-zinc-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors -ml-1">
           <ArrowLeft size={20} />
         </button>
-        <h1 className="text-xl font-bold text-slate-900">{isEdit ? 'Edit programme' : 'New programme'}</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-50">{isEdit ? 'Edit programme' : 'New programme'}</h1>
       </div>
 
       <div className="mb-6">
-        <label className="block text-xs font-medium text-slate-500 mb-1.5">Programme name</label>
+        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Programme name</label>
         <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Week 3 — Hypertrophy"
-          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-vesta-red transition-colors shadow-sm" />
+          className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-slate-900 dark:text-slate-50 text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-vesta-red transition-colors shadow-sm" />
       </div>
 
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Exercises</h2>
-          <span className="text-xs text-slate-400">{exercises.length} added</span>
+          <h2 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Exercises</h2>
+          <span className="text-xs text-slate-400 dark:text-slate-500">{exercises.length} added</span>
         </div>
         {exercises.length > 0 && (
           <div className="space-y-2.5 mb-3">
@@ -192,7 +192,7 @@ export default function ProgrammeBuilder() {
             </select>
             <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           </div>
-          <button onClick={addExercise} className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium px-3.5 py-2.5 rounded-xl transition-colors flex-shrink-0">
+          <button onClick={addExercise} className="flex items-center gap-1.5 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-300 text-sm font-medium px-3.5 py-2.5 rounded-xl transition-colors flex-shrink-0">
             <Plus size={15} /> Add
           </button>
         </div>
@@ -200,7 +200,7 @@ export default function ProgrammeBuilder() {
 
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Assign to athletes</h2>
+          <h2 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Assign to athletes</h2>
           <div className="flex items-center gap-3">
             {(() => {
               const assignedIds = new Set(assignments.map(a => a.athlete_id).filter(Boolean))
@@ -220,7 +220,7 @@ export default function ProgrammeBuilder() {
           </div>
         </div>
         {assignments.length === 0 ? (
-          <p className="text-xs text-slate-400 text-center py-3">No assignments yet — tap "Add" to assign this programme to an athlete.</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-3">No assignments yet — tap "Add" to assign this programme to an athlete.</p>
         ) : (
           <div className="space-y-2.5">
             {assignments.map(asgn => <AssignmentRow key={asgn._localId} asgn={asgn} athletes={athletes} onChange={(key, val) => updateAssignment(asgn._localId, key, val)} onRemove={() => removeAssignment(asgn._localId)} />)}

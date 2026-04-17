@@ -67,7 +67,7 @@ export default function History() {
           </div>
         </div>
       )}
-      <h1 className="text-2xl font-bold text-slate-900 mb-5">History</h1>
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50 mb-5">History</h1>
 
       {sessions.length === 0 ? (
         <div className="text-center py-16">
@@ -86,15 +86,15 @@ export default function History() {
               : null
 
             return (
-              <div key={sess.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+              <div key={sess.id} className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-sm">
                 <button
                   onClick={() => toggle(sess.id)}
                   className="w-full px-4 py-4 flex items-start justify-between text-left"
                 >
                   <div>
-                    <div className="text-sm font-bold text-slate-900">{formatDate(sess.date)}</div>
+                    <div className="text-sm font-bold text-slate-900 dark:text-slate-50">{formatDate(sess.date)}</div>
                     <div className="flex items-center gap-3 mt-2">
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-slate-400 dark:text-slate-500">
                         {orderedExercises.length} exercise{orderedExercises.length !== 1 ? 's' : ''}
                       </span>
                       {sess.total_tonnage > 0 && (
@@ -109,26 +109,26 @@ export default function History() {
                       )}
                       {completedDate && (
                         <>
-                          <span className="text-slate-300 text-xs">•</span>
-                          <span className="text-xs text-slate-400">Done {completedDate}</span>
+                          <span className="text-slate-300 dark:text-zinc-600 text-xs">•</span>
+                          <span className="text-xs text-slate-400 dark:text-slate-500">Done {completedDate}</span>
                         </>
                       )}
                     </div>
                   </div>
-                  <span className="text-slate-400 mt-1 flex-shrink-0">
+                  <span className="text-slate-400 dark:text-zinc-500 mt-1 flex-shrink-0">
                     {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                   </span>
                 </button>
 
                 {isOpen && (
-                  <div className="border-t border-slate-100 divide-y divide-slate-100">
+                  <div className="border-t border-slate-100 dark:border-zinc-800 divide-y divide-slate-100 dark:divide-zinc-800">
                     {orderedExercises.map(se => {
                       const sortedSets = (se.sets || []).sort((a, b) => a.set_number - b.set_number)
                       const maxWeight = sortedSets.length > 0 ? Math.max(...sortedSets.map(s => s.weight)) : 0
                       return (
                         <div key={se.id} className="px-4 py-3">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-slate-900">{se.exercises?.name}</span>
+                            <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{se.exercises?.name}</span>
                             {maxWeight > 0 && (
                               <span className="text-xs text-slate-400 flex items-center gap-1">
                                 <Trophy size={10} className="text-vesta-red/60" />
@@ -141,14 +141,14 @@ export default function History() {
                               {sortedSets.map(s => (
                                 <span
                                   key={s.id}
-                                  className="text-xs bg-slate-100 text-slate-600 rounded-lg px-2.5 py-1"
+                                  className="text-xs bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 rounded-lg px-2.5 py-1"
                                 >
                                   {s.weight ? `${s.weight}kg × ${s.reps}` : [s.reps && `${s.reps} reps`, s.time_seconds && `${s.time_seconds}s`].filter(Boolean).join(' × ')}
                                 </span>
                               ))}
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-400">No sets logged</span>
+                            <span className="text-xs text-slate-400 dark:text-slate-500">No sets logged</span>
                           )}
                           {se.notes && (
                             <p className="text-xs text-slate-400 mt-2 italic">"{se.notes}"</p>

@@ -10,6 +10,7 @@ import { usePullToRefresh } from '../../hooks/usePullToRefresh'
 import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, ArrowLeft, Trash2, X, RotateCcw } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import ZoeCelebration from '../../components/ui/ZoeCelebration'
+import CharlotteCelebration from '../../components/ui/CharlotteCelebration'
 
 const CHARLOTTE_EXERCISE = "Charlotte Clover's Special Deadlift"
 const ZOE_EXERCISE = "Zoe's Overhead Press"
@@ -30,19 +31,19 @@ function ExercisePicker({ exercises, onSelect, adding }) {
       <div className="flex gap-2 overflow-x-auto pb-1 mb-3 -mx-1 px-1">
         <button
           onClick={() => setActiveCategory(null)}
-          className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${!activeCategory ? 'bg-vesta-red text-white' : 'bg-slate-100 text-slate-500'}`}
+          className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${!activeCategory ? 'bg-vesta-red text-white' : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400'}`}
         >All</button>
         {categories.map(cat => (
           <button key={cat}
             onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
-            className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${activeCategory === cat ? 'bg-vesta-red text-white' : 'bg-slate-100 text-slate-500'}`}
+            className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${activeCategory === cat ? 'bg-vesta-red text-white' : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400'}`}
           >{CATEGORY_LABELS[cat] ?? cat}</button>
         ))}
       </div>
       <div className="flex flex-wrap gap-2">
         {filtered.map(ex => (
           <button key={ex.id} onClick={() => onSelect(ex.id)} disabled={adding}
-            className="px-3.5 py-2.5 bg-slate-100 active:bg-vesta-red active:text-white rounded-xl text-sm text-slate-700 font-medium transition-colors disabled:opacity-40 select-none">
+            className="px-3.5 py-2.5 bg-slate-100 dark:bg-zinc-800 active:bg-vesta-red active:text-white rounded-xl text-sm text-slate-700 dark:text-slate-300 font-medium transition-colors disabled:opacity-40 select-none">
             {ex.name}
           </button>
         ))}
@@ -78,6 +79,7 @@ export default function SessionEdit() {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [finishing, setFinishing] = useState(false)
   const [showZoe, setShowZoe] = useState(false)
+  const [showCharlotte, setShowCharlotte] = useState(false)
 
   const inputRefs = useRef({})
   const [pulsingSet, setPulsingSet] = useState({})
@@ -247,7 +249,7 @@ export default function SessionEdit() {
           isPR = true
           showToast(`🏆 New PR — ${exData.exercise.name}!`, 'pr')
         }
-        if (exData.exercise.name === CHARLOTTE_EXERCISE) fireConfetti()
+        if (exData.exercise.name === CHARLOTTE_EXERCISE) setShowCharlotte(true)
         if (exData.exercise.name === ZOE_EXERCISE) setShowZoe(true)
       }
       if (!isPR) showToast('Set logged')
@@ -338,26 +340,26 @@ export default function SessionEdit() {
           <ArrowLeft size={20} />
         </button>
         <div>
-          <p className="text-xs text-slate-400 uppercase tracking-wider font-medium">{sessionDate}</p>
-          <h1 className="text-xl font-bold text-slate-900 leading-tight">Edit session</h1>
+          <p className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-medium">{sessionDate}</p>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-slate-50 leading-tight">Edit session</h1>
         </div>
       </div>
 
       {exerciseOrder.length > 0 && (
-        <div className="bg-white rounded-2xl px-4 py-3 flex items-center justify-between mb-5 border border-slate-200 shadow-sm">
+        <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl px-4 py-3 flex items-center justify-between mb-5 border border-slate-200 dark:border-zinc-800 shadow-sm">
           <div className="text-center">
-            <div className="text-lg font-bold text-slate-900">{completedSets}<span className="text-slate-300 text-sm font-normal">/{totalSets}</span></div>
-            <div className="text-xs text-slate-400">Sets</div>
+            <div className="text-lg font-bold text-slate-900 dark:text-slate-50">{completedSets}<span className="text-slate-300 dark:text-zinc-600 text-sm font-normal">/{totalSets}</span></div>
+            <div className="text-xs text-slate-400 dark:text-slate-500">Sets</div>
           </div>
-          <div className="h-8 w-px bg-slate-200" />
+          <div className="h-8 w-px bg-slate-200 dark:bg-zinc-700" />
           <div className="text-center">
             <div className="text-lg font-bold text-vesta-red">{totalTonnage >= 1000 ? `${(totalTonnage / 1000).toFixed(1)}t` : `${totalTonnage}kg`}</div>
-            <div className="text-xs text-slate-400">Tonnage</div>
+            <div className="text-xs text-slate-400 dark:text-slate-500">Tonnage</div>
           </div>
-          <div className="h-8 w-px bg-slate-200" />
+          <div className="h-8 w-px bg-slate-200 dark:bg-zinc-700" />
           <div className="text-center">
-            <div className="text-lg font-bold text-slate-900">{exerciseOrder.length}</div>
-            <div className="text-xs text-slate-400">Exercises</div>
+            <div className="text-lg font-bold text-slate-900 dark:text-slate-50">{exerciseOrder.length}</div>
+            <div className="text-xs text-slate-400 dark:text-slate-500">Exercises</div>
           </div>
         </div>
       )}
@@ -377,17 +379,17 @@ export default function SessionEdit() {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm mb-4 overflow-hidden">
+      <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm mb-4 overflow-hidden">
         {!showPicker ? (
           <button onClick={() => setShowPicker(true)}
-            className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-semibold text-vesta-red active:bg-slate-50 transition-colors">
+            className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-semibold text-vesta-red active:bg-slate-50 dark:active:bg-zinc-800 transition-colors">
             <Plus size={16} /> Add exercise
           </button>
         ) : (
           <div className="p-4">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Choose exercise</p>
-              <button onClick={() => setShowPicker(false)} className="text-slate-400 hover:text-slate-600 p-1 -mr-1">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Choose exercise</p>
+              <button onClick={() => setShowPicker(false)} className="text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300 p-1 -mr-1">
                 <X size={16} />
               </button>
             </div>
@@ -396,19 +398,19 @@ export default function SessionEdit() {
         )}
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-4 shadow-sm">
-        <p className="text-xs font-medium text-slate-500 mb-2">Session notes</p>
+      <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 p-4 mb-4 shadow-sm">
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Session notes</p>
         <textarea
           value={notes}
           onChange={e => { setNotes(e.target.value); setNotesDirty(true); setNotesSaved(false) }}
           placeholder="How did the session feel? Any notes for your coach..."
           rows={3}
-          className="w-full bg-slate-100 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-vesta-red/40 resize-none transition-all"
+          className="w-full bg-slate-100 dark:bg-zinc-800 rounded-xl px-3 py-2.5 text-sm text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-vesta-red/40 resize-none transition-all"
         />
         <button
           onClick={saveNotes}
           disabled={savingNotes || (!notesDirty && !notesSaved)}
-          className={`mt-2 w-full py-2 rounded-xl text-xs font-semibold transition-all ${notesSaved ? 'bg-green-100 text-green-700' : notesDirty ? 'bg-vesta-navy text-white active:opacity-80' : 'bg-slate-100 text-slate-400'}`}
+          className={`mt-2 w-full py-2 rounded-xl text-xs font-semibold transition-all ${notesSaved ? 'bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-400' : notesDirty ? 'bg-vesta-navy text-white active:opacity-80' : 'bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500'}`}
         >
           {savingNotes ? 'Saving…' : notesSaved ? 'Saved ✓' : 'Save notes'}
         </button>
@@ -423,11 +425,11 @@ export default function SessionEdit() {
           const isExpanded = expanded[seId] ?? true
           const isPR = prBadges[seId]
           return (
-            <div key={seId} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+            <div key={seId} className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-sm">
               <div className="px-4 pt-4 pb-3 flex items-center justify-between">
                 <button onClick={() => setExpanded(prev => ({ ...prev, [seId]: !prev[seId] }))}
                   className="flex items-center gap-2 flex-1 text-left">
-                  <span className="text-base font-semibold text-slate-900">{exercise.name}</span>
+                  <span className="text-base font-semibold text-slate-900 dark:text-slate-50">{exercise.name}</span>
                   {isPR && <span className="flex items-center gap-1 bg-vesta-red text-white text-xs font-bold px-2 py-0.5 rounded-full"><Trophy size={10} /> PR</span>}
                 </button>
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -452,7 +454,7 @@ export default function SessionEdit() {
                     const isSaved = !!savedSets[seId]?.[n]
                     const isSaving = savingSet[`${seId}-${n}`]
                     const inp = inputs[seId]?.[n] || {}
-                    const inputClass = `bg-slate-100 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300'}`
+                    const inputClass = `bg-slate-100 dark:bg-zinc-800 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300 dark:focus:ring-zinc-600'}`
                     const canLog = inputType === 'weighted' ? (inp.weight && inp.reps) : inputType === 'timed' ? (inp.reps && inp.duration) : inp.reps
                     return (
                       <SwipeToDelete key={n} onDelete={() => deleteSet(seId, n)} disabled={isSaving} silent>
@@ -496,7 +498,7 @@ export default function SessionEdit() {
                     )
                   })}
                   <button onClick={() => addSet(seId)}
-                    className="w-full py-2 rounded-xl text-xs text-slate-400 hover:text-slate-600 border border-dashed border-slate-300 hover:border-slate-400 transition-colors flex items-center justify-center gap-1 mt-2">
+                    className="w-full py-2 rounded-xl text-xs text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300 border border-dashed border-slate-300 dark:border-zinc-700 hover:border-slate-400 dark:hover:border-zinc-600 transition-colors flex items-center justify-center gap-1 mt-2">
                     <Plus size={12} /> Add set
                   </button>
                 </div>
@@ -518,15 +520,16 @@ export default function SessionEdit() {
       )}
 
       <Modal open={!!confirmDeleteId} onClose={() => setConfirmDeleteId(null)} title="Remove exercise?">
-        <p className="text-slate-500 text-sm mb-5">
-          This will delete <strong className="text-slate-900">{exerciseMap[confirmDeleteId]?.exercise?.name}</strong> and all its logged sets. This can't be undone.
+        <p className="text-slate-500 dark:text-slate-400 text-sm mb-5">
+          This will delete <strong className="text-slate-900 dark:text-slate-100">{exerciseMap[confirmDeleteId]?.exercise?.name}</strong> and all its logged sets. This can't be undone.
         </p>
         <div className="flex gap-3">
-          <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-3 rounded-xl text-sm font-medium bg-slate-100 text-slate-600 transition-colors">Cancel</button>
+          <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-3 rounded-xl text-sm font-medium bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 transition-colors">Cancel</button>
           <button onClick={() => deleteExercise(confirmDeleteId)} className="flex-1 py-3 rounded-xl text-sm font-bold bg-red-500 hover:bg-red-600 text-white transition-colors">Remove</button>
         </div>
       </Modal>
       {showZoe && <ZoeCelebration onDismiss={() => setShowZoe(false)} />}
+      {showCharlotte && <CharlotteCelebration onDismiss={() => setShowCharlotte(false)} />}
     </div>
   )
 }

@@ -25,11 +25,11 @@ function Toast({ toast, onDismiss }) {
 
   return (
     <div
-      className={`flex items-start gap-2.5 rounded-xl shadow-lg border border-slate-200 border-l-4 ${borders[toast.type] ?? borders.success} px-3.5 py-3 animate-toast-in ${toast.type === 'pr' ? 'bg-amber-50' : 'bg-white'}`}
+      className={`flex items-start gap-2.5 rounded-xl shadow-lg border border-slate-200 dark:border-zinc-700 border-l-4 ${borders[toast.type] ?? borders.success} px-3.5 py-3 animate-toast-in ${toast.type === 'pr' ? 'bg-amber-50 dark:bg-amber-950/40' : 'bg-white dark:bg-[#1C1C1E]'}`}
     >
       {icons[toast.type] ?? icons.success}
-      <p className="text-sm font-medium text-slate-800 flex-1 leading-tight">{toast.message}</p>
-      <button onClick={() => onDismiss(toast.id)} className="text-slate-300 hover:text-slate-500 transition-colors flex-shrink-0 mt-0.5 -mr-0.5">
+      <p className="text-sm font-medium text-slate-800 dark:text-slate-100 flex-1 leading-tight">{toast.message}</p>
+      <button onClick={() => onDismiss(toast.id)} className="text-slate-300 dark:text-zinc-600 hover:text-slate-500 dark:hover:text-zinc-400 transition-colors flex-shrink-0 mt-0.5 -mr-0.5">
         <X size={14} />
       </button>
     </div>

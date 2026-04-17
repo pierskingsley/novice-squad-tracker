@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
+import { useTheme } from '../../context/ThemeContext'
 import Spinner from '../../components/ui/Spinner'
 import { usePullToRefresh } from '../../hooks/usePullToRefresh'
 import { TrendingUp, ChevronDown, RotateCcw } from 'lucide-react'
@@ -8,13 +9,20 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts'
 
-const CHART_STYLE = {
-  cartesian: { strokeDasharray: '3 3', stroke: '#E2E8F0' },
-  axis: { stroke: '#CBD5E1', tick: { fill: '#94A3B8', fontSize: 10 } },
-  tooltip: {
-    contentStyle: { backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '10px', fontSize: 12 },
-    labelStyle: { color: '#64748B' },
-  },
+function getChartStyle(isDark) {
+  return {
+    cartesian: { strokeDasharray: '3 3', stroke: isDark ? '#3F3F46' : '#E2E8F0' },
+    axis: { stroke: isDark ? '#52525B' : '#CBD5E1', tick: { fill: isDark ? '#71717A' : '#94A3B8', fontSize: 10 } },
+    tooltip: {
+      contentStyle: {
+        backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+        border: `1px solid ${isDark ? '#3F3F46' : '#E2E8F0'}`,
+        borderRadius: '10px',
+        fontSize: 12,
+      },
+      labelStyle: { color: isDark ? '#A1A1AA' : '#64748B' },
+    },
+  }
 }
 
 function CustomDot(props) {
@@ -31,6 +39,7 @@ function CustomDotNavy(props) {
 
 export default function Progress() {
   const { user } = useAuth()
+  const { isDark } = useTheme()
   const [exercises, setExercises] = useState([])
   const [selectedId, setSelectedId] = useState('')
   const [maxWeightData, setMaxWeightData] = useState([])
@@ -158,7 +167,7 @@ export default function Progress() {
           </div>
         </div>
       )}
-      <h1 className="text-2xl font-bold text-slate-900 mb-5">Progress</h1>
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50 mb-5">Progress</h1>
 
       {exercises.length === 0 ? (
         <div className="text-center py-16">
@@ -173,7 +182,7 @@ export default function Progress() {
             <select
               value={selectedId}
               onChange={e => setSelectedId(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 pr-10 text-slate-900 text-sm appearance-none focus:outline-none focus:border-vesta-red transition-colors cursor-pointer shadow-sm"
+              className="w-full bg-white dark:bg-[#1C1C1E] border border-slate-200 dark:border-zinc-700 rounded-xl px-4 py-3 pr-10 text-slate-900 dark:text-slate-50 text-sm appearance-none focus:outline-none focus:border-vesta-red transition-colors cursor-pointer shadow-sm"
             >
               {exercises.map(ex => (
                 <option key={ex.id} value={ex.id}>{ex.name}</option>
@@ -189,10 +198,10 @@ export default function Progress() {
           ) : (
             <div className="space-y-5">
               {/* Max weight chart */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+              <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 p-4 shadow-sm">
                 <div className="mb-3">
-                  <div className="text-sm font-semibold text-slate-900">Max Weight</div>
-                  <div className="text-xs text-slate-400">Heaviest set per session (kg)</div>
+                  <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Max Weight</div>
+                  <div className="text-xs text-slate-400 dark:text-slate-500">Heaviest set per session (kg)</div>
                 </div>
                 <ResponsiveContainer width="100%" height={180}>
                   <AreaChart data={maxWeightData} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
@@ -202,11 +211,11 @@ export default function Progress() {
                         <stop offset="95%" stopColor="#C8102E" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid {...CHART_STYLE.cartesian} />
-                    <XAxis dataKey="date" {...CHART_STYLE.axis} />
-                    <YAxis {...CHART_STYLE.axis} />
+                    <CartesianGrid {...getChartStyle(isDark).cartesian} />
+                    <XAxis dataKey="date" {...getChartStyle(isDark).axis} />
+                    <YAxis {...getChartStyle(isDark).axis} />
                     <Tooltip
-                      {...CHART_STYLE.tooltip}
+                      {...getChartStyle(isDark).tooltip}
                       formatter={(v) => [`${v}kg`, 'Max weight']}
                     />
                     {maxWeightData.length > 0 && (
@@ -232,10 +241,10 @@ export default function Progress() {
               </div>
 
               {/* Tonnage chart */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+              <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 p-4 shadow-sm">
                 <div className="mb-3">
-                  <div className="text-sm font-semibold text-slate-900">Session Tonnage</div>
-                  <div className="text-xs text-slate-400">Total volume per session for this exercise (kg)</div>
+                  <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Session Tonnage</div>
+                  <div className="text-xs text-slate-400 dark:text-slate-500">Total volume per session for this exercise (kg)</div>
                 </div>
                 <ResponsiveContainer width="100%" height={180}>
                   <AreaChart data={tonnageData} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
@@ -245,11 +254,11 @@ export default function Progress() {
                         <stop offset="95%" stopColor="#003087" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid {...CHART_STYLE.cartesian} />
-                    <XAxis dataKey="date" {...CHART_STYLE.axis} />
-                    <YAxis {...CHART_STYLE.axis} />
+                    <CartesianGrid {...getChartStyle(isDark).cartesian} />
+                    <XAxis dataKey="date" {...getChartStyle(isDark).axis} />
+                    <YAxis {...getChartStyle(isDark).axis} />
                     <Tooltip
-                      {...CHART_STYLE.tooltip}
+                      {...getChartStyle(isDark).tooltip}
                       formatter={(v) => [`${v}kg`, 'Tonnage']}
                     />
                     {tonnageData.length > 0 && (

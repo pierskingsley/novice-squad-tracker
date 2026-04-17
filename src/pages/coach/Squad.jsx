@@ -29,7 +29,7 @@ export default function Squad() {
 
   return (
     <div className="px-4 pt-6">
-      <h1 className="text-2xl font-bold text-slate-900 mb-5">Squad</h1>
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50 mb-5">Squad</h1>
 
       {athletes.length === 0 ? (
         <div className="text-center py-16">
@@ -38,23 +38,23 @@ export default function Squad() {
           <p className="text-slate-400 text-xs mt-1">Athletes will appear here once they create accounts.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden divide-y divide-slate-100 shadow-sm">
+        <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden divide-y divide-slate-100 dark:divide-zinc-800 shadow-sm">
           {athletes.map(athlete => (
             <button
               key={athlete.id}
               onClick={() => navigate(`/coach/squad/${athlete.id}`)}
-              className="w-full flex items-center justify-between px-4 py-4 hover:bg-slate-50 transition-colors text-left"
+              className="w-full flex items-center justify-between px-4 py-4 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors text-left"
             >
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-vesta-red to-vesta-navy flex items-center justify-center flex-shrink-0">
                   <span className="text-sm font-bold text-white">{athlete.name.charAt(0).toUpperCase()}</span>
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-slate-900">{athlete.name}</div>
-                  <div className="text-xs text-slate-400 mt-0.5">{athlete.sessionCount} session{athlete.sessionCount !== 1 ? 's' : ''} completed</div>
+                  <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{athlete.name}</div>
+                  <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{athlete.sessionCount} session{athlete.sessionCount !== 1 ? 's' : ''} completed</div>
                 </div>
               </div>
-              <ChevronRight size={16} className="text-slate-400" />
+              <ChevronRight size={16} className="text-slate-400 dark:text-zinc-500" />
             </button>
           ))}
         </div>

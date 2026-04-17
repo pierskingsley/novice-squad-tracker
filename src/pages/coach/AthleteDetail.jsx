@@ -46,7 +46,7 @@ export default function AthleteDetail() {
   return (
     <div className="px-4 pt-5 pb-10">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate('/coach/squad')} className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors -ml-1">
+        <button onClick={() => navigate('/coach/squad')} className="p-2 rounded-xl text-slate-400 dark:text-zinc-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors -ml-1">
           <ArrowLeft size={20} />
         </button>
         <div className="flex items-center gap-3">
@@ -54,32 +54,32 @@ export default function AthleteDetail() {
             <span className="text-base font-bold text-white">{athlete.name.charAt(0).toUpperCase()}</span>
           </div>
           <div>
-            <h1 className="text-lg font-bold text-slate-900">{athlete.name}</h1>
-            <p className="text-xs text-slate-400">{sessions.length} sessions completed</p>
+            <h1 className="text-lg font-bold text-slate-900 dark:text-slate-50">{athlete.name}</h1>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{sessions.length} sessions completed</p>
           </div>
         </div>
       </div>
 
       <div className="flex items-center gap-2 mb-3">
         <Trophy size={14} className="text-vesta-red" />
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">PR Board</h2>
+        <h2 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">PR Board</h2>
       </div>
 
       {pbs.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 px-4 py-4 text-center mb-5 shadow-sm">
-          <p className="text-slate-400 text-xs">No personal records yet.</p>
+        <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 px-4 py-4 text-center mb-5 shadow-sm">
+          <p className="text-slate-400 dark:text-slate-500 text-xs">No personal records yet.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden mb-5 shadow-sm">
-          <div className="divide-y divide-slate-100">
+        <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden mb-5 shadow-sm">
+          <div className="divide-y divide-slate-100 dark:divide-zinc-800">
             {pbs.slice(0, 10).map((pb, i) => (
-              <div key={i} className={`flex items-center justify-between px-4 py-3 ${i === 0 ? 'bg-amber-50' : ''}`}>
+              <div key={i} className={`flex items-center justify-between px-4 py-3 ${i === 0 ? 'bg-amber-50 dark:bg-amber-950/30' : ''}`}>
                 <div className="flex items-center gap-3">
                   {i === 0
                     ? <span className="text-xs w-4 text-right">🏆</span>
-                    : <span className="text-xs text-slate-400 w-4 text-right">{i + 1}</span>
+                    : <span className="text-xs text-slate-400 dark:text-slate-500 w-4 text-right">{i + 1}</span>
                   }
-                  <span className="text-sm text-slate-900">{pb.exercises?.name}</span>
+                  <span className="text-sm text-slate-900 dark:text-slate-100">{pb.exercises?.name}</span>
                 </div>
                 <span className="text-sm font-bold text-vesta-red">{pb.weight}kg × {pb.reps}</span>
               </div>
@@ -88,11 +88,11 @@ export default function AthleteDetail() {
         </div>
       )}
 
-      <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Recent Sessions</h2>
+      <h2 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Recent Sessions</h2>
 
       {sessions.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 px-4 py-4 text-center shadow-sm">
-          <p className="text-slate-400 text-xs">No completed sessions.</p>
+        <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 px-4 py-4 text-center shadow-sm">
+          <p className="text-slate-400 dark:text-slate-500 text-xs">No completed sessions.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -100,10 +100,10 @@ export default function AthleteDetail() {
             const isOpen = expanded[sess.id]
             const orderedExercises = (sess.session_exercises || []).sort((a, b) => a.order_index - b.order_index)
             return (
-              <div key={sess.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+              <div key={sess.id} className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-sm">
                 <button onClick={() => toggle(sess.id)} className="w-full px-4 py-3.5 flex items-center justify-between text-left">
                   <div>
-                    <div className="text-sm font-semibold text-slate-900">{formatDate(sess.date)}</div>
+                    <div className="text-sm font-semibold text-slate-900 dark:text-slate-50">{formatDate(sess.date)}</div>
                     <div className="flex items-center gap-2 mt-0.5">
                       {sess.total_tonnage > 0 && (
                         <span className="text-xs text-vesta-red font-medium">
@@ -112,29 +112,29 @@ export default function AthleteDetail() {
                       )}
                     </div>
                   </div>
-                  <span className="text-slate-400">{isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</span>
+                  <span className="text-slate-400 dark:text-zinc-500">{isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</span>
                 </button>
                 {isOpen && (
-                  <div className="border-t border-slate-100 divide-y divide-slate-100">
+                  <div className="border-t border-slate-100 dark:border-zinc-800 divide-y divide-slate-100 dark:divide-zinc-800">
                     {sess.notes && (
-                      <div className="px-4 py-3 bg-amber-50/60">
-                        <p className="text-xs font-medium text-amber-700 mb-0.5">Athlete notes</p>
-                        <p className="text-sm text-slate-700">{sess.notes}</p>
+                      <div className="px-4 py-3 bg-amber-50/60 dark:bg-amber-950/20">
+                        <p className="text-xs font-medium text-amber-700 dark:text-amber-400 mb-0.5">Athlete notes</p>
+                        <p className="text-sm text-slate-700 dark:text-slate-300">{sess.notes}</p>
                       </div>
                     )}
                     {orderedExercises.map(se => {
                       const sortedSets = (se.sets || []).sort((a, b) => a.set_number - b.set_number)
                       return (
                         <div key={se.id} className="px-4 py-3">
-                          <div className="text-sm font-medium text-slate-900 mb-2">{se.exercises?.name}</div>
+                          <div className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">{se.exercises?.name}</div>
                           {sortedSets.length > 0 ? (
                             <div className="flex flex-wrap gap-2">
                               {sortedSets.map(s => (
-                                <span key={s.id} className="text-xs bg-slate-100 text-slate-600 rounded-lg px-2.5 py-1">{s.weight}kg × {s.reps}</span>
+                                <span key={s.id} className="text-xs bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 rounded-lg px-2.5 py-1">{s.weight}kg × {s.reps}</span>
                               ))}
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-400">No sets logged</span>
+                            <span className="text-xs text-slate-400 dark:text-slate-500">No sets logged</span>
                           )}
                         </div>
                       )

@@ -41,13 +41,13 @@ export default function Login() {
 
   if (registered) {
     return (
-      <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center px-5 text-center">
+      <div className="min-h-screen bg-slate-100 dark:bg-[#09090B] flex flex-col items-center justify-center px-5 text-center">
         <div className="w-14 h-14 rounded-2xl bg-vesta-red/10 flex items-center justify-center mb-5">
           <Dumbbell size={28} className="text-vesta-red" />
         </div>
-        <h1 className="text-xl font-bold text-slate-900 mb-2">Check your inbox</h1>
-        <p className="text-slate-500 text-sm max-w-xs mb-6">
-          We've sent a confirmation link to <strong className="text-slate-900">{email}</strong>. Click it to activate your account, then sign in.
+        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-50 mb-2">Check your inbox</h1>
+        <p className="text-slate-500 dark:text-slate-400 text-sm max-w-xs mb-6">
+          We've sent a confirmation link to <strong className="text-slate-900 dark:text-slate-200">{email}</strong>. Click it to activate your account, then sign in.
         </p>
         <button
           onClick={() => { setMode('login'); setRegistered(false) }}
@@ -60,7 +60,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col justify-center px-5 py-12">
+    <div className="min-h-screen bg-slate-100 dark:bg-[#09090B] flex flex-col justify-center px-5 py-12">
       <div className="max-w-sm mx-auto w-full">
         {/* Logo */}
         <div className="flex items-center gap-3 mb-10">
@@ -68,15 +68,15 @@ export default function Login() {
             <Dumbbell size={22} className="text-white" />
           </div>
           <div>
-            <div className="text-slate-900 font-bold text-lg leading-tight">Squad Tracker</div>
-            <div className="text-slate-400 text-xs">Novice lifting programme</div>
+            <div className="text-slate-900 dark:text-slate-50 font-bold text-lg leading-tight">Squad Tracker</div>
+            <div className="text-slate-400 dark:text-slate-500 text-xs">Novice lifting programme</div>
           </div>
         </div>
 
-        <h1 className="text-2xl font-bold text-slate-900 mb-1">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50 mb-1">
           {mode === 'login' ? 'Welcome back' : 'Create account'}
         </h1>
-        <p className="text-slate-500 text-sm mb-8">
+        <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">
           {mode === 'login' ? "Sign in to your account" : "Join the squad"}
         </p>
 
@@ -84,19 +84,19 @@ export default function Login() {
           {mode === 'register' && (
             <>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">Name</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Name</label>
                 <input
                   type="text"
                   value={name}
                   onChange={e => setName(e.target.value)}
                   placeholder="Your name"
                   required
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:border-vesta-red transition-colors shadow-sm"
+                  className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-vesta-red transition-colors shadow-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">Role</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Role</label>
                 <div className="grid grid-cols-2 gap-2">
                   {[ROLES.ATHLETE, ROLES.COACH].map(r => (
                     <button
@@ -106,7 +106,7 @@ export default function Login() {
                       className={`py-3 rounded-xl text-sm font-medium border transition-colors ${
                         role === r
                           ? 'bg-vesta-red text-white border-vesta-red'
-                          : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 shadow-sm'
+                          : 'bg-white dark:bg-zinc-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-zinc-700 hover:border-slate-300 dark:hover:border-zinc-600 shadow-sm'
                       }`}
                     >
                       {r === ROLES.ATHLETE ? 'Athlete' : 'Coach'}
@@ -118,19 +118,19 @@ export default function Login() {
           )}
 
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Email</label>
+            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Email</label>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:border-vesta-red transition-colors shadow-sm"
+              className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-vesta-red transition-colors shadow-sm"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Password</label>
+            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Password</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -139,12 +139,12 @@ export default function Login() {
                 placeholder="••••••••"
                 required
                 minLength={6}
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 pr-11 text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:border-vesta-red transition-colors shadow-sm"
+                className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl px-4 py-3 pr-11 text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-vesta-red transition-colors shadow-sm"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(p => !p)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300 transition-colors"
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -167,7 +167,7 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="text-center text-slate-400 text-sm mt-6">
+        <p className="text-center text-slate-400 dark:text-slate-500 text-sm mt-6">
           {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
           <button
             onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}

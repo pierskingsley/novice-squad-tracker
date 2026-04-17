@@ -12,6 +12,7 @@ import { usePullToRefresh } from '../../hooks/usePullToRefresh'
 import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, Pencil, CalendarPlus, Trash2, Share, X, Download, RotateCcw, ClipboardList } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import ZoeCelebration from '../../components/ui/ZoeCelebration'
+import CharlotteCelebration from '../../components/ui/CharlotteCelebration'
 
 const CHARLOTTE_EXERCISE = "Charlotte Clover's Special Deadlift"
 const ZOE_EXERCISE = "Zoe's Overhead Press"
@@ -59,15 +60,15 @@ function PastSessionsList({ sessions, onEdit, onDelete, onAddDate, addingDate })
     <div className="mt-8 mb-4">
       <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Past sessions</h2>
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-3 shadow-sm">
-        <p className="text-xs font-medium text-slate-500 mb-2">Log a missed session</p>
+      <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 p-4 mb-3 shadow-sm">
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Log a missed session</p>
         <div className="flex gap-2">
           <input
             type="date"
             value={pickedDate}
             max={new Date(Date.now() - 86400000).toISOString().split('T')[0]}
             onChange={e => setPickedDate(e.target.value)}
-            className="flex-1 bg-slate-100 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-vesta-red transition-colors"
+            className="flex-1 bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-slate-900 dark:text-slate-50 focus:outline-none focus:border-vesta-red transition-colors"
           />
           <button
             onClick={() => { if (pickedDate) onAddDate(pickedDate) }}
@@ -85,10 +86,10 @@ function PastSessionsList({ sessions, onEdit, onDelete, onAddDate, addingDate })
           const exNames = (sess.session_exercises || []).map(se => se.exercises?.name).filter(Boolean)
           const label = new Date(sess.date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
           return (
-            <div key={sess.id} className="bg-white rounded-2xl border border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
+            <div key={sess.id} className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 px-4 py-3 flex items-center justify-between shadow-sm">
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-slate-900">{label}</div>
-                <div className="text-xs text-slate-400 mt-0.5 truncate">
+                <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{label}</div>
+                <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate">
                   {exNames.length > 0 ? exNames.join(', ') : 'No exercises'}
                   {sess.total_tonnage > 0 && ` · ${sess.total_tonnage}kg`}
                 </div>
@@ -118,16 +119,16 @@ function ExercisePicker({ exercises, onSelect, adding }) {
     <div>
       <div className="flex gap-2 overflow-x-auto pb-1 mb-3 -mx-1 px-1">
         <button onClick={() => setActiveCategory(null)}
-          className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${!activeCategory ? 'bg-vesta-red text-white' : 'bg-slate-100 text-slate-500'}`}>All</button>
+          className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${!activeCategory ? 'bg-vesta-red text-white' : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400'}`}>All</button>
         {categories.map(cat => (
           <button key={cat} onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
-            className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors ${activeCategory === cat ? 'bg-vesta-red text-white' : 'bg-slate-100 text-slate-500'}`}>{cat}</button>
+            className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors ${activeCategory === cat ? 'bg-vesta-red text-white' : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400'}`}>{cat}</button>
         ))}
       </div>
       <div className="flex flex-wrap gap-2">
         {filtered.map(ex => (
           <button key={ex.id} onClick={() => onSelect(ex.id)} disabled={adding}
-            className="px-3.5 py-2.5 bg-slate-100 active:bg-vesta-red active:text-white rounded-xl text-sm text-slate-700 font-medium transition-colors disabled:opacity-40 select-none">
+            className="px-3.5 py-2.5 bg-slate-100 dark:bg-zinc-800 active:bg-vesta-red active:text-white rounded-xl text-sm text-slate-700 dark:text-slate-300 font-medium transition-colors disabled:opacity-40 select-none">
             {adding ? <Spinner size="sm" /> : ex.name}
           </button>
         ))}
@@ -168,6 +169,7 @@ export default function Home() {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [confirmDeletePastId, setConfirmDeletePastId] = useState(null)
   const [showZoe, setShowZoe] = useState(false)
+  const [showCharlotte, setShowCharlotte] = useState(false)
   const [assignedProgrammeName, setAssignedProgrammeName] = useState(null)
   const [pulsingSet, setPulsingSet] = useState({})
   const [welcomeIdx] = useState(() => new Date().getDay() % WELCOME_MESSAGES.length)
@@ -477,13 +479,32 @@ export default function Home() {
           isPR = true
           showToast(`🏆 New PR — ${exData.exercise.name}!`, 'pr')
         }
-        if (exData.exercise.name === CHARLOTTE_EXERCISE) fireConfetti()
+        if (exData.exercise.name === CHARLOTTE_EXERCISE) setShowCharlotte(true)
         if (exData.exercise.name === ZOE_EXERCISE) setShowZoe(true)
       }
       if (!isPR) showToast('Set logged')
       if (navigator.vibrate) navigator.vibrate(10)
       setPulsingSet(prev => ({ ...prev, [key]: true }))
       setTimeout(() => setPulsingSet(prev => ({ ...prev, [key]: false })), 500)
+
+      // Pre-fill next set if it exists and is still empty
+      const nextN = n + 1
+      setInputs(prev => {
+        const nextInp = prev[seId]?.[nextN]
+        if (!nextInp) return prev
+        const isEmpty = inputType === 'weighted'
+          ? (!nextInp.weight && !nextInp.reps)
+          : inputType === 'timed'
+          ? (!nextInp.reps && !nextInp.duration)
+          : !nextInp.reps
+        if (!isEmpty) return prev
+        const filled = inputType === 'weighted'
+          ? { weight: String(weight), reps: String(reps) }
+          : inputType === 'timed'
+          ? { reps: String(reps), duration: String(weight) }
+          : { reps: String(reps) }
+        return { ...prev, [seId]: { ...prev[seId], [nextN]: filled } }
+      })
     } catch (err) { showToast('Failed to log set — try again', 'error') }
     finally { setSavingSet(prev => ({ ...prev, [key]: false })) }
   }
@@ -593,18 +614,18 @@ export default function Home() {
         <div className="w-16 h-16 bg-vesta-red/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <CheckCircle2 size={32} className="text-vesta-red" />
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-1">{firstName ? `Nice work, ${firstName}!` : 'Session complete'}</h1>
-        <p className="text-slate-500 text-sm mb-1">{congratsMsg}</p>
-        <p className="text-xs text-slate-400 mb-4">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50 mb-1">{firstName ? `Nice work, ${firstName}!` : 'Session complete'}</h1>
+        <p className="text-slate-500 dark:text-slate-400 text-sm mb-1">{congratsMsg}</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
         <button onClick={() => navigate(`/athlete/session/${session.id}`)} className="flex items-center gap-1.5 text-xs text-vesta-red font-medium mx-auto">
           <Pencil size={13} /> Edit session
         </button>
       </div>
-      <div className="bg-white rounded-2xl p-5 border border-slate-200 mb-4 shadow-sm">
+      <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-5 border border-slate-200 dark:border-zinc-800 mb-4 shadow-sm">
         <div className="grid grid-cols-3 gap-4 text-center">
-          <div><div className="text-2xl font-bold text-vesta-red">{completedSets}</div><div className="text-xs text-slate-400 mt-0.5">Sets done</div></div>
-          <div><div className="text-2xl font-bold text-slate-900">{totalTonnage >= 1000 ? `${(totalTonnage / 1000).toFixed(1)}t` : `${totalTonnage}kg`}</div><div className="text-xs text-slate-400 mt-0.5">Tonnage</div></div>
-          <div><div className="text-2xl font-bold text-slate-900">{exerciseOrder.length}</div><div className="text-xs text-slate-400 mt-0.5">Exercises</div></div>
+          <div><div className="text-2xl font-bold text-vesta-red">{completedSets}</div><div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Sets done</div></div>
+          <div><div className="text-2xl font-bold text-slate-900 dark:text-slate-50">{totalTonnage >= 1000 ? `${(totalTonnage / 1000).toFixed(1)}t` : `${totalTonnage}kg`}</div><div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Tonnage</div></div>
+          <div><div className="text-2xl font-bold text-slate-900 dark:text-slate-50">{exerciseOrder.length}</div><div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Exercises</div></div>
         </div>
       </div>
       {totalTonnage >= 1000 && (
@@ -622,9 +643,9 @@ export default function Home() {
       <PastSessionsList sessions={pastSessions} onEdit={id => navigate(`/athlete/session/${id}`)} onDelete={id => setConfirmDeletePastId(id)} onAddDate={handleAddDate} addingDate={addingDate} />
 
       <Modal open={!!confirmDeletePastId} onClose={() => setConfirmDeletePastId(null)} title="Delete session?">
-        <p className="text-slate-500 text-sm mb-5">This will permanently delete this session and all its logged sets. This can't be undone.</p>
+        <p className="text-slate-500 dark:text-slate-400 text-sm mb-5">This will permanently delete this session and all its logged sets. This can't be undone.</p>
         <div className="flex gap-3">
-          <button onClick={() => setConfirmDeletePastId(null)} className="flex-1 py-3 rounded-xl text-sm font-medium bg-slate-100 text-slate-600 transition-colors">Cancel</button>
+          <button onClick={() => setConfirmDeletePastId(null)} className="flex-1 py-3 rounded-xl text-sm font-medium bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 transition-colors">Cancel</button>
           <button onClick={() => deletePastSession(confirmDeletePastId)} className="flex-1 py-3 rounded-xl text-sm font-bold bg-red-500 text-white transition-colors">Delete</button>
         </div>
       </Modal>
@@ -632,7 +653,7 @@ export default function Home() {
   )
 
   return (
-    <div {...ptrHandlers} className="px-4 pt-6 pb-28">
+    <div {...ptrHandlers} className="px-4 pt-6 pb-40">
       {/* Pull-to-refresh indicator */}
       {pullDistance > 0 && (
         <div
@@ -650,8 +671,8 @@ export default function Home() {
 
       <div className="flex items-start justify-between mb-5">
         <div>
-          <p className="text-xs text-slate-400 uppercase tracking-wider font-medium mb-0.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-          <h1 className="text-2xl font-bold text-slate-900">{profile?.name ? WELCOME_MESSAGES[welcomeIdx](profile.name.trim().split(' ')[0]) : "Today's session"}</h1>
+          <p className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-medium mb-0.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">{profile?.name ? WELCOME_MESSAGES[welcomeIdx](profile.name.trim().split(' ')[0]) : "Today's session"}</h1>
         </div>
         {installPrompt && (
           <button onClick={handleInstall} className="flex items-center gap-1.5 bg-vesta-navy text-white text-xs font-semibold px-3 py-2 rounded-xl shadow-sm flex-shrink-0 mt-1">
@@ -682,35 +703,35 @@ export default function Home() {
       )}
 
       {exerciseOrder.length > 0 && (
-        <div className="bg-white rounded-2xl px-4 py-3 flex items-center justify-between mb-5 border border-slate-200 shadow-sm">
+        <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl px-4 py-3 flex items-center justify-between mb-5 border border-slate-200 dark:border-zinc-800 shadow-sm">
           <div className="text-center">
-            <div className="text-lg font-bold text-slate-900">{completedSets}<span className="text-slate-300 text-sm font-normal">/{totalSets}</span></div>
-            <div className="text-xs text-slate-400">Sets</div>
+            <div className="text-lg font-bold text-slate-900 dark:text-slate-50">{completedSets}<span className="text-slate-300 dark:text-zinc-600 text-sm font-normal">/{totalSets}</span></div>
+            <div className="text-xs text-slate-400 dark:text-slate-500">Sets</div>
           </div>
-          <div className="h-8 w-px bg-slate-200" />
+          <div className="h-8 w-px bg-slate-200 dark:bg-zinc-700" />
           <div className="text-center">
             <div className="text-lg font-bold text-vesta-red">{totalTonnage >= 1000 ? `${(totalTonnage / 1000).toFixed(1)}t` : `${totalTonnage}kg`}</div>
-            <div className="text-xs text-slate-400">Tonnage</div>
+            <div className="text-xs text-slate-400 dark:text-slate-500">Tonnage</div>
           </div>
-          <div className="h-8 w-px bg-slate-200" />
+          <div className="h-8 w-px bg-slate-200 dark:bg-zinc-700" />
           <div className="text-center">
-            <div className="text-lg font-bold text-slate-900">{exerciseOrder.length}</div>
-            <div className="text-xs text-slate-400">Exercises</div>
+            <div className="text-lg font-bold text-slate-900 dark:text-slate-50">{exerciseOrder.length}</div>
+            <div className="text-xs text-slate-400 dark:text-slate-500">Exercises</div>
           </div>
         </div>
       )}
 
       {exerciseOrder.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm mb-4 overflow-hidden">
+        <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm mb-4 overflow-hidden">
           {!showPicker ? (
-            <button onClick={() => setShowPicker(true)} className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-semibold text-vesta-red active:bg-slate-50 transition-colors">
+            <button onClick={() => setShowPicker(true)} className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-semibold text-vesta-red active:bg-slate-50 dark:active:bg-zinc-800 transition-colors">
               <Plus size={16} /> Add exercise
             </button>
           ) : (
             <div className="p-4">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Choose exercise</p>
-                <button onClick={() => setShowPicker(false)} className="text-slate-400 hover:text-slate-600 p-1 -mr-1"><X size={16} /></button>
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Choose exercise</p>
+                <button onClick={() => setShowPicker(false)} className="text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300 p-1 -mr-1"><X size={16} /></button>
               </div>
               <ExercisePicker exercises={allExercises} onSelect={addExercise} adding={addingExercise} />
             </div>
@@ -731,10 +752,10 @@ export default function Home() {
               <p className="text-slate-400 text-sm italic">{QUOTES[quoteIdx]}</p>
             </>
           ) : (
-            <div className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+            <div className="w-full bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm p-4">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Choose exercise</p>
-                <button onClick={() => setShowPicker(false)} className="text-slate-400 hover:text-slate-600 p-1 -mr-1"><X size={16} /></button>
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Choose exercise</p>
+                <button onClick={() => setShowPicker(false)} className="text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300 p-1 -mr-1"><X size={16} /></button>
               </div>
               <ExercisePicker exercises={allExercises} onSelect={addExercise} adding={addingExercise} />
             </div>
@@ -756,10 +777,10 @@ export default function Home() {
           const suggestedWeight = inputType === 'weighted' && allLastCompleted ? Math.max(...lastWeights) + 2.5 : null
 
           return (
-            <div key={seId} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+            <div key={seId} className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-sm">
               <div className="px-4 pt-4 pb-3 flex items-center justify-between">
                 <button onClick={() => setExpanded(prev => ({ ...prev, [seId]: !prev[seId] }))} className="flex items-center gap-2 flex-wrap flex-1 text-left">
-                  <span className="text-base font-semibold text-slate-900">{exercise.name}</span>
+                  <span className="text-base font-semibold text-slate-900 dark:text-slate-50">{exercise.name}</span>
                   {isPR && <span className="flex items-center gap-1 bg-vesta-red text-white text-xs font-bold px-2 py-0.5 rounded-full"><Trophy size={10} /> PR</span>}
                 </button>
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -772,9 +793,9 @@ export default function Home() {
 
               {last.length > 0 && (
                 <div className="px-4 pb-2 flex items-center gap-2 flex-wrap">
-                  <span className="text-xs text-slate-400">Last time:</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">Last time:</span>
                   {last.map((s, i) => (
-                    <span key={i} className="text-xs bg-slate-100 text-slate-500 rounded-md px-1.5 py-0.5">
+                    <span key={i} className="text-xs bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 rounded-md px-1.5 py-0.5">
                       {inputType === 'timed' ? `${s.reps}×${s.weight}s` : inputType === 'bodyweight' ? `×${s.reps}` : `${s.weight}kg×${s.reps}`}
                     </span>
                   ))}
@@ -796,7 +817,7 @@ export default function Home() {
                     const isSaved = !!savedSets[seId]?.[n]
                     const isSaving = savingSet[`${seId}-${n}`]
                     const inp = inputs[seId]?.[n] || {}
-                    const inputClass = `bg-slate-100 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300'}`
+                    const inputClass = `bg-slate-100 dark:bg-zinc-800 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300 dark:focus:ring-zinc-600'}`
                     const canLog = inputType === 'weighted' ? (inp.weight && inp.reps) : inputType === 'timed' ? (inp.reps && inp.duration) : inp.reps
                     return (
                       <SwipeToDelete key={n} onDelete={() => deleteSet(seId, n)} disabled={isSaving} silent>
@@ -841,7 +862,7 @@ export default function Home() {
                   })}
 
                   <button onClick={() => addSet(seId)}
-                    className="w-full py-2 rounded-xl text-xs text-slate-400 hover:text-slate-600 border border-dashed border-slate-300 hover:border-slate-400 transition-colors flex items-center justify-center gap-1">
+                    className="w-full py-2 rounded-xl text-xs text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300 border border-dashed border-slate-300 dark:border-zinc-700 hover:border-slate-400 dark:hover:border-zinc-600 transition-colors flex items-center justify-center gap-1">
                     <Plus size={12} /> Add set
                   </button>
                 </div>
@@ -852,51 +873,57 @@ export default function Home() {
       </div>
 
       {session && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 mt-4 shadow-sm">
-          <p className="text-xs font-medium text-slate-500 mb-2">Session notes</p>
+        <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 p-4 mt-4 shadow-sm">
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Session notes</p>
           <textarea value={notes} onChange={e => { setNotes(e.target.value); setNotesDirty(true); setNotesSaved(false) }}
             placeholder="How did the session feel? Any notes for your coach..."
             rows={3}
-            className="w-full bg-slate-100 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-vesta-red/40 resize-none transition-all" />
+            className="w-full bg-slate-100 dark:bg-zinc-800 rounded-xl px-3 py-2.5 text-sm text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-vesta-red/40 resize-none transition-all" />
           <button
             onClick={saveNotes}
             disabled={savingNotes || (!notesDirty && !notesSaved)}
-            className={`mt-2 w-full py-2 rounded-xl text-xs font-semibold transition-all ${notesSaved ? 'bg-green-100 text-green-700' : notesDirty ? 'bg-vesta-navy text-white active:opacity-80' : 'bg-slate-100 text-slate-400'}`}
+            className={`mt-2 w-full py-2 rounded-xl text-xs font-semibold transition-all ${notesSaved ? 'bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-400' : notesDirty ? 'bg-vesta-navy text-white active:opacity-80' : 'bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500'}`}
           >
             {savingNotes ? 'Saving…' : notesSaved ? 'Saved ✓' : 'Save notes'}
           </button>
         </div>
       )}
 
-      {session && !session.completed_at && completedSets > 0 && (
-        <button onClick={finishSession} disabled={finishing}
-          className="w-full mt-4 bg-vesta-red active:bg-vesta-red-dark text-white font-bold py-4 rounded-2xl text-sm shadow-lg shadow-vesta-red/20 transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2">
-          {finishing ? <Spinner size="sm" /> : <CheckCircle2 size={16} />}
-          Complete session
-        </button>
-      )}
-
       <PastSessionsList sessions={pastSessions} onEdit={id => navigate(`/athlete/session/${id}`)} onDelete={id => setConfirmDeletePastId(id)} onAddDate={handleAddDate} addingDate={addingDate} />
 
       <Modal open={!!confirmDeletePastId} onClose={() => setConfirmDeletePastId(null)} title="Delete session?">
-        <p className="text-slate-500 text-sm mb-5">This will permanently delete this session and all its logged sets. This can't be undone.</p>
+        <p className="text-slate-500 dark:text-slate-400 text-sm mb-5">This will permanently delete this session and all its logged sets. This can't be undone.</p>
         <div className="flex gap-3">
-          <button onClick={() => setConfirmDeletePastId(null)} className="flex-1 py-3 rounded-xl text-sm font-medium bg-slate-100 text-slate-600 transition-colors">Cancel</button>
+          <button onClick={() => setConfirmDeletePastId(null)} className="flex-1 py-3 rounded-xl text-sm font-medium bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 transition-colors">Cancel</button>
           <button onClick={() => deletePastSession(confirmDeletePastId)} className="flex-1 py-3 rounded-xl text-sm font-bold bg-red-500 text-white transition-colors">Delete</button>
         </div>
       </Modal>
 
       <Modal open={!!confirmDeleteId} onClose={() => setConfirmDeleteId(null)} title="Remove exercise?">
-        <p className="text-slate-500 text-sm mb-5">
-          This will delete <strong className="text-slate-900">{exerciseMap[confirmDeleteId]?.exercise?.name}</strong> and all its logged sets. This can't be undone.
+        <p className="text-slate-500 dark:text-slate-400 text-sm mb-5">
+          This will delete <strong className="text-slate-900 dark:text-slate-100">{exerciseMap[confirmDeleteId]?.exercise?.name}</strong> and all its logged sets. This can't be undone.
         </p>
         <div className="flex gap-3">
-          <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-3 rounded-xl text-sm font-medium bg-slate-100 text-slate-600 transition-colors">Cancel</button>
+          <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-3 rounded-xl text-sm font-medium bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 transition-colors">Cancel</button>
           <button onClick={() => deleteExercise(confirmDeleteId)} className="flex-1 py-3 rounded-xl text-sm font-bold bg-red-500 hover:bg-red-600 text-white transition-colors">Remove</button>
         </div>
       </Modal>
 
       {showZoe && <ZoeCelebration onDismiss={() => setShowZoe(false)} />}
+      {showCharlotte && <CharlotteCelebration onDismiss={() => setShowCharlotte(false)} />}
+
+      {session && !session.completed_at && completedSets > 0 && (
+        <div className="fixed bottom-20 left-0 right-0 px-4 z-30 pointer-events-none">
+          <button
+            onClick={finishSession}
+            disabled={finishing}
+            className="w-full max-w-lg mx-auto block bg-vesta-red active:bg-vesta-red-dark text-white font-bold py-4 rounded-2xl text-sm shadow-xl shadow-vesta-red/30 transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 pointer-events-auto"
+          >
+            {finishing ? <Spinner size="sm" /> : <CheckCircle2 size={16} />}
+            Complete session
+          </button>
+        </div>
+      )}
     </div>
   )
 }

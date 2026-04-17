@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
+import { useTheme } from '../../context/ThemeContext'
 import Spinner from '../../components/ui/Spinner'
 import { ProfilePageSkeleton } from '../../components/ui/Skeleton'
 import { Trophy, LogOut, Dumbbell, Flame, Activity } from 'lucide-react'
 
 export default function Profile() {
   const { user, profile, signOut } = useAuth()
+  const { preference, setPreference } = useTheme()
   const [pbs, setPbs] = useState([])
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -74,17 +76,17 @@ export default function Profile() {
 
   return (
     <div className="px-4 pt-6 pb-10">
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-5 flex items-center gap-4 shadow-sm">
+      <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 p-5 mb-5 flex items-center gap-4 shadow-sm">
         <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-vesta-red to-vesta-navy flex items-center justify-center flex-shrink-0">
           <span className="text-2xl font-bold text-white">{profile?.name?.charAt(0).toUpperCase() ?? '?'}</span>
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-lg font-bold text-slate-900 truncate">{profile?.name || 'Athlete'}</div>
-          <div className="text-xs text-slate-400 mt-0.5">{user?.email}</div>
+          <div className="text-lg font-bold text-slate-900 dark:text-slate-50 truncate">{profile?.name || 'Athlete'}</div>
+          <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{user?.email}</div>
         </div>
         <button
           onClick={signOut}
-          className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-600 transition-colors py-2 px-3 rounded-xl hover:bg-red-50"
+          className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-zinc-500 hover:text-red-600 transition-colors py-2 px-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30"
         >
           <LogOut size={14} />
           Sign out
@@ -92,12 +94,12 @@ export default function Profile() {
       </div>
 
       {stats && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm mb-5">
-          <div className="grid grid-cols-3 divide-x divide-slate-100">
+        <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm mb-5">
+          <div className="grid grid-cols-3 divide-x divide-slate-100 dark:divide-zinc-800">
             <div className="flex flex-col items-center py-4 gap-1">
-              <Activity size={16} className="text-vesta-navy mb-0.5" />
-              <span className="text-xl font-bold text-vesta-navy">{stats.sessions}</span>
-              <span className="text-xs text-slate-400">Sessions</span>
+              <Activity size={16} className="text-vesta-navy dark:text-orange-400 mb-0.5" />
+              <span className="text-xl font-bold text-vesta-navy dark:text-orange-400">{stats.sessions}</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">Sessions</span>
             </div>
             <div className="flex flex-col items-center py-4 gap-1">
               <Dumbbell size={16} className="text-vesta-red mb-0.5" />
@@ -106,12 +108,12 @@ export default function Profile() {
                   ? `${(stats.tonnage / 1000).toFixed(1)}t`
                   : `${Math.round(stats.tonnage)}kg`}
               </span>
-              <span className="text-xs text-slate-400">Lifted</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">Lifted</span>
             </div>
             <div className="flex flex-col items-center py-4 gap-1">
               <Flame size={16} className="text-amber-500 mb-0.5" />
               <span className="text-xl font-bold text-amber-500">{stats.streak}</span>
-              <span className="text-xs text-slate-400">Best streak</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">Best streak</span>
             </div>
           </div>
         </div>
@@ -119,30 +121,30 @@ export default function Profile() {
 
       <div className="flex items-center gap-2 mb-3">
         <Trophy size={14} className="text-vesta-red" />
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">PR Board</h2>
+        <h2 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">PR Board</h2>
       </div>
 
       {pbs.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center shadow-sm">
-          <Trophy size={32} className="text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-500 text-sm">No personal records yet.</p>
-          <p className="text-slate-400 text-xs mt-1">Log sets to start tracking your bests.</p>
+        <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 p-6 text-center shadow-sm">
+          <Trophy size={32} className="text-slate-300 dark:text-zinc-600 mx-auto mb-3" />
+          <p className="text-slate-500 dark:text-slate-400 text-sm">No personal records yet.</p>
+          <p className="text-slate-400 dark:text-slate-500 text-xs mt-1">Log sets to start tracking your bests.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="divide-y divide-slate-100">
+        <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-sm">
+          <div className="divide-y divide-slate-100 dark:divide-zinc-800">
             {pbs.map((pb, i) => (
-              <div key={i} className={`flex items-center justify-between px-4 py-3.5 ${i === 0 ? 'bg-amber-50' : ''}`}>
+              <div key={i} className={`flex items-center justify-between px-4 py-3.5 ${i === 0 ? 'bg-amber-50 dark:bg-amber-950/30' : ''}`}>
                 <div className="flex items-center gap-3">
                   {i === 0
                     ? <span className="text-xs w-4 text-right">🏆</span>
-                    : <span className="text-xs text-slate-400 w-4 text-right">{i + 1}</span>
+                    : <span className="text-xs text-slate-400 dark:text-slate-500 w-4 text-right">{i + 1}</span>
                   }
-                  <span className="text-sm text-slate-900 font-medium">{pb.exercises?.name}</span>
+                  <span className="text-sm text-slate-900 dark:text-slate-100 font-medium">{pb.exercises?.name}</span>
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-bold text-vesta-red">{pb.weight}kg × {pb.reps}</div>
-                  <div className="text-xs text-slate-400 mt-0.5">
+                  <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
                     {new Date(pb.achieved_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                   </div>
                 </div>
@@ -151,6 +153,32 @@ export default function Profile() {
           </div>
         </div>
       )}
+
+      {/* Appearance */}
+      <div className="mt-5">
+        <h2 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Appearance</h2>
+        <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 p-4 shadow-sm">
+          <div className="flex rounded-xl overflow-hidden border border-slate-200 dark:border-zinc-700">
+            {[
+              { value: 'auto', label: 'Auto' },
+              { value: 'light', label: 'Light' },
+              { value: 'dark', label: 'Dark' },
+            ].map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => setPreference(value)}
+                className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${
+                  preference === value
+                    ? 'bg-vesta-red text-white'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-zinc-800'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
