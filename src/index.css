@@ -8,8 +8,9 @@
   }
 
   body {
-    @apply bg-slate-100 dark:bg-[#09090B] text-slate-900 dark:text-slate-50 antialiased;
+    @apply bg-ci-chalk dark:bg-ci-dark-bg text-ci-ink dark:text-ci-dark-ink antialiased;
     overscroll-behavior: none;
+    font-family: 'Inter', -apple-system, sans-serif;
   }
 
   /* Prevent iOS Safari auto-zoom on input focus */
@@ -34,7 +35,7 @@
 
 @keyframes log-pulse {
   0%   { background-color: transparent; }
-  30%  { background-color: rgb(200 16 46 / 0.10); }
+  30%  { background-color: rgb(241 196 48 / 0.15); }
   100% { background-color: transparent; }
 }
 
@@ -53,5 +54,18 @@
   }
   .pt-safe-top {
     padding-top: env(safe-area-inset-top);
+  }
+
+  /* Chalk & Iron card primitive */
+  .ci-card {
+    background: #FFFDF5;
+    border: 2px solid #181614;
+    border-radius: 4px;
+    box-shadow: 3px 3px 0 #181614;
+  }
+  .dark .ci-card {
+    background: #1F1C18;
+    border-color: #302B24;
+    box-shadow: 3px 3px 0 #302B24;
   }
 }

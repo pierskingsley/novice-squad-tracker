@@ -8,15 +8,45 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Nunito', 'sans-serif'],
+        sans: ['Inter', '-apple-system', 'sans-serif'],
+        display: ['"Archivo Black"', 'Impact', 'sans-serif'],
+        chalk: ['Caveat', 'cursive'],
       },
       colors: {
+        // Chalk & Iron palette
+        ci: {
+          chalk:      '#F5F1E8',
+          'chalk-deep': '#ECE5D4',
+          ink:        '#181614',
+          'ink-soft': '#55504A',
+          'ink-mute': '#857F76',
+          rule:       '#D8CFBB',
+          red:        '#D13A2E',
+          'red-deep': '#A82A20',
+          navy:       '#2B3A5C',
+          yellow:     '#F4C430',
+          'dark-bg':  '#14120F',
+          'dark-card':'#1F1C18',
+          'dark-rule':'#302B24',
+          'dark-ink': '#F5F1E8',
+        },
+        // Keep legacy tokens for coach pages
         vesta: {
-          red: '#C8102E',
-          'red-dark': '#A50D24',
-          navy: '#003087',
+          red: '#D13A2E',
+          'red-dark': '#A82A20',
+          navy: '#2B3A5C',
           'navy-light': '#EBF0F8',
         },
+      },
+      boxShadow: {
+        'ci':    '3px 3px 0 #181614',
+        'ci-lg': '4px 4px 0 #181614',
+        'ci-xl': '6px 6px 0 #D13A2E',
+        'ci-dark':    '3px 3px 0 #F5F1E8',
+        'ci-dark-lg': '4px 4px 0 #F5F1E8',
+      },
+      borderRadius: {
+        ci: '4px',
       },
       keyframes: {
         'toast-in': {
