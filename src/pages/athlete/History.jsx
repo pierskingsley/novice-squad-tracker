@@ -2,15 +2,39 @@ import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Spinner from '../../components/ui/Spinner'
-import { HistoryPageSkeleton } from '../../components/ui/Skeleton'
 import { usePullToRefresh } from '../../hooks/usePullToRefresh'
 import { ChevronDown, ChevronUp, Trophy, Calendar, RotateCcw } from 'lucide-react'
+
+const CI = {
+  chalk: '#F5F1E8', chalkDeep: '#ECE5D4',
+  ink: '#181614', inkSoft: '#55504A', inkMute: '#857F76',
+  rule: '#D8CFBB', red: '#D13A2E',
+  darkBg: '#14120F', darkCard: '#1F1C18', darkRule: '#302B24', darkInk: '#F5F1E8',
+}
+
+function useIsDark() {
+  return typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
+}
 
 export default function History() {
   const { user } = useAuth()
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState({})
+  const dark = useIsDark()
+
+  const bg   = dark ? CI.darkBg   : CI.chalk
+  const card = dark ? CI.darkCard : '#FFFDF5'
+  const ink  = dark ? CI.darkInk  : CI.ink
+  const mute = dark ? '#9A9387'   : CI.inkMute
+  const rule = dark ? CI.darkRule : CI.rule
+
+  const cardStyle = {
+    background: card,
+    border: `2px solid ${ink}`,
+    borderRadius: 4,
+    boxShadow: `3px 3px 0 ${ink}`,
+  }
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -54,104 +78,141 @@ export default function History() {
   }
 
   if (loading && !refreshing) {
-    return <HistoryPageSkeleton />
+    return (
+      <div style={{ minHeight: '100vh', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Spinner />
+      </div>
+    )
   }
 
   return (
-    <div {...ptrHandlers} className="px-4 pt-6">
+    <div {...ptrHandlers} style={{ minHeight: '100vh', background: bg, padding: '24px 16px 100px' }}>
       {pullDistance > 0 && (
-        <div className="flex items-center justify-center overflow-hidden transition-all duration-150"
-          style={{ height: pullDistance, marginTop: -pullDistance, marginBottom: pullDistance }}>
-          <div className={`transition-all duration-150 ${isTriggered || refreshing ? 'text-vesta-red' : 'text-slate-300'}`}>
-            {refreshing ? <Spinner size="sm" /> : <RotateCcw size={18} className={isTriggered ? 'rotate-180' : ''} />}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', height: pullDistance, marginTop: -pullDistance, marginBottom: pullDistance }}>
+          <div style={{ color: isTriggered || refreshing ? CI.red : rule, transition: 'color 0.15s' }}>
+            {refreshing ? <Spinner size="sm" /> : <RotateCcw size={18} style={{ transform: isTriggered ? 'rotate(180deg)' : 'none' }} />}
           </div>
         </div>
       )}
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50 mb-5">History</h1>
+
+      <div style={{
+        fontFamily: '"Archivo Black", Impact, sans-serif',
+        fontSize: 26, fontWeight: 900, color: ink,
+        textTransform: 'uppercase', letterSpacing: -0.5,
+        marginBottom: 20,
+      }}>Past</div>
 
       {sessions.length === 0 ? (
-        <div className="text-center py-16">
-          <Calendar size={40} className="text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-500 text-sm">No completed sessions yet.</p>
-          <p className="text-slate-400 text-xs mt-1">Finish your first session to see it here.</p>
+        <div style={{ textAlign: 'center', padding: '64px 0' }}>
+          <Calendar size={40} style={{ color: rule, margin: '0 auto 12px' }} />
+          <p style={{ fontFamily: '"Archivo Black", Impact, sans-serif', fontSize: 15, color: mute, marginBottom: 4 }}>No sessions yet</p>
+          <p style={{ fontFamily: 'Caveat, cursive', fontSize: 16, color: mute }}>Finish your first session to see it here.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {sessions.map(sess => {
             const isOpen = expanded[sess.id]
             const orderedExercises = (sess.session_exercises || [])
               .sort((a, b) => a.order_index - b.order_index)
-            const completedDate = sess.completed_at
+            const completedTime = sess.completed_at
               ? new Date(sess.completed_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
               : null
 
             return (
-              <div key={sess.id} className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-sm">
+              <div key={sess.id} style={{ ...cardStyle, overflow: 'hidden' }}>
                 <button
                   onClick={() => toggle(sess.id)}
-                  className="w-full px-4 py-4 flex items-start justify-between text-left"
+                  style={{
+                    width: '100%', padding: '14px 16px',
+                    display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+                    background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                  }}
                 >
                   <div>
-                    <div className="text-sm font-bold text-slate-900 dark:text-slate-50">{formatDate(sess.date)}</div>
-                    <div className="flex items-center gap-3 mt-2">
-                      <span className="text-xs text-slate-400 dark:text-slate-500">
+                    <div style={{
+                      fontFamily: '"Archivo Black", Impact, sans-serif',
+                      fontSize: 15, fontWeight: 900, color: ink,
+                    }}>{formatDate(sess.date)}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
+                      <span style={{ fontFamily: 'Caveat, cursive', fontSize: 15, color: mute }}>
                         {orderedExercises.length} exercise{orderedExercises.length !== 1 ? 's' : ''}
                       </span>
                       {sess.total_tonnage > 0 && (
                         <>
-                          <span className="text-slate-300 text-xs">•</span>
-                          <span className="text-xs text-vesta-red font-medium">
+                          <span style={{ color: rule, fontSize: 12 }}>·</span>
+                          <span style={{
+                            fontFamily: '"Archivo Black", Impact, sans-serif',
+                            fontSize: 12, fontWeight: 900, color: CI.red, textTransform: 'uppercase',
+                          }}>
                             {sess.total_tonnage >= 1000
                               ? `${(sess.total_tonnage / 1000).toFixed(1)}t`
-                              : `${sess.total_tonnage}kg`} tonnage
+                              : `${sess.total_tonnage}kg`}
                           </span>
                         </>
                       )}
-                      {completedDate && (
+                      {completedTime && (
                         <>
-                          <span className="text-slate-300 dark:text-zinc-600 text-xs">•</span>
-                          <span className="text-xs text-slate-400 dark:text-slate-500">Done {completedDate}</span>
+                          <span style={{ color: rule, fontSize: 12 }}>·</span>
+                          <span style={{ fontFamily: 'Caveat, cursive', fontSize: 14, color: mute }}>Done {completedTime}</span>
                         </>
                       )}
                     </div>
                   </div>
-                  <span className="text-slate-400 dark:text-zinc-500 mt-1 flex-shrink-0">
+                  <span style={{ color: mute, marginTop: 2, flexShrink: 0 }}>
                     {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                   </span>
                 </button>
 
                 {isOpen && (
-                  <div className="border-t border-slate-100 dark:border-zinc-800 divide-y divide-slate-100 dark:divide-zinc-800">
-                    {orderedExercises.map(se => {
+                  <div style={{ borderTop: `2px solid ${rule}` }}>
+                    {orderedExercises.map((se, idx) => {
                       const sortedSets = (se.sets || []).sort((a, b) => a.set_number - b.set_number)
                       const maxWeight = sortedSets.length > 0 ? Math.max(...sortedSets.map(s => s.weight)) : 0
                       return (
-                        <div key={se.id} className="px-4 py-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{se.exercises?.name}</span>
+                        <div
+                          key={se.id}
+                          style={{
+                            padding: '12px 16px',
+                            borderTop: idx > 0 ? `1px solid ${rule}` : 'none',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <span style={{
+                              fontFamily: '"Archivo Black", Impact, sans-serif',
+                              fontSize: 13, fontWeight: 900, color: ink,
+                            }}>{se.exercises?.name}</span>
                             {maxWeight > 0 && (
-                              <span className="text-xs text-slate-400 flex items-center gap-1">
-                                <Trophy size={10} className="text-vesta-red/60" />
+                              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'Caveat, cursive', fontSize: 14, color: mute }}>
+                                <Trophy size={11} style={{ color: CI.red }} />
                                 {maxWeight}kg
                               </span>
                             )}
                           </div>
                           {sortedSets.length > 0 ? (
-                            <div className="flex flex-wrap gap-2">
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                               {sortedSets.map(s => (
                                 <span
                                   key={s.id}
-                                  className="text-xs bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 rounded-lg px-2.5 py-1"
+                                  style={{
+                                    fontFamily: 'Caveat, cursive', fontSize: 15,
+                                    background: dark ? CI.darkBg : CI.chalkDeep,
+                                    border: `1px solid ${rule}`,
+                                    borderRadius: 4,
+                                    padding: '3px 10px',
+                                    color: ink,
+                                  }}
                                 >
-                                  {s.weight ? `${s.weight}kg × ${s.reps}` : [s.reps && `${s.reps} reps`, s.time_seconds && `${s.time_seconds}s`].filter(Boolean).join(' × ')}
+                                  {s.weight
+                                    ? `${s.weight}kg × ${s.reps}`
+                                    : [s.reps && `${s.reps} reps`, s.time_seconds && `${s.time_seconds}s`].filter(Boolean).join(' × ')}
                                 </span>
                               ))}
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-400 dark:text-slate-500">No sets logged</span>
+                            <span style={{ fontFamily: 'Caveat, cursive', fontSize: 14, color: mute }}>No sets logged</span>
                           )}
                           {se.notes && (
-                            <p className="text-xs text-slate-400 mt-2 italic">"{se.notes}"</p>
+                            <p style={{ fontFamily: 'Caveat, cursive', fontSize: 14, color: mute, marginTop: 8 }}>"{se.notes}"</p>
                           )}
                         </div>
                       )
