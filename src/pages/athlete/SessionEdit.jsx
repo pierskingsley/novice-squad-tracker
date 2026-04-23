@@ -7,43 +7,80 @@ import Modal from '../../components/ui/Modal'
 import SwipeToDelete from '../../components/ui/SwipeToDelete'
 import { useToast } from '../../context/ToastContext'
 import { usePullToRefresh } from '../../hooks/usePullToRefresh'
-import { Trophy, CheckCircle2, ChevronDown, ChevronUp, Plus, ArrowLeft, Trash2, X, RotateCcw } from 'lucide-react'
+import { Trophy, CheckCircle2, Plus, ArrowLeft, Trash2, X, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import ZoeCelebration from '../../components/ui/ZoeCelebration'
 import CharlotteCelebration from '../../components/ui/CharlotteCelebration'
 
 const CHARLOTTE_EXERCISE = "Charlotte Clover's Special Deadlift"
 const ZOE_EXERCISE = "Zoe's Overhead Press"
+
+const CI = {
+  chalk: '#F5F1E8', chalkDeep: '#ECE5D4',
+  ink: '#181614', inkSoft: '#55504A', inkMute: '#857F76',
+  rule: '#D8CFBB', red: '#D13A2E', redDeep: '#A82A20',
+  navy: '#2B3A5C', yellow: '#F4C430',
+  darkBg: '#14120F', darkCard: '#1F1C18', darkRule: '#302B24', darkInk: '#F5F1E8',
+}
+
+function useIsDark() {
+  return typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
+}
+
 function fireConfetti() {
-  confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#C8102E', '#003087', '#ffffff', '#FFD700'] })
+  confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#D13A2E', '#2B3A5C', '#ffffff', '#F4C430'] })
 }
 
 const CATEGORY_LABELS = { compound: 'Compounds', accessory: 'Accessory', core: 'Core' }
 const CATEGORY_ORDER = ['compound', 'accessory', 'core']
 
-function ExercisePicker({ exercises, onSelect, adding }) {
+function ExercisePicker({ exercises, onSelect, adding, dark }) {
   const [activeCategory, setActiveCategory] = useState(null)
   const categories = CATEGORY_ORDER.filter(c => exercises.some(e => e.category === c))
   const filtered = activeCategory ? exercises.filter(e => e.category === activeCategory) : exercises
+  const ink = dark ? CI.darkInk : CI.ink
+  const mute = dark ? '#9A9387' : CI.inkMute
+  const rule = dark ? CI.darkRule : CI.rule
 
   return (
     <div>
-      <div className="flex gap-2 overflow-x-auto pb-1 mb-3 -mx-1 px-1">
+      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 10 }}>
         <button
           onClick={() => setActiveCategory(null)}
-          className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${!activeCategory ? 'bg-vesta-red text-white' : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400'}`}
+          style={{
+            flexShrink: 0, padding: '6px 14px', borderRadius: 4,
+            border: `2px solid ${!activeCategory ? CI.red : rule}`,
+            background: !activeCategory ? CI.red : 'transparent',
+            color: !activeCategory ? CI.chalk : mute,
+            fontFamily: '"Archivo Black", Impact, sans-serif',
+            fontSize: 11, fontWeight: 900, textTransform: 'uppercase', cursor: 'pointer',
+          }}
         >All</button>
         {categories.map(cat => (
           <button key={cat}
             onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
-            className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${activeCategory === cat ? 'bg-vesta-red text-white' : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400'}`}
+            style={{
+              flexShrink: 0, padding: '6px 14px', borderRadius: 4,
+              border: `2px solid ${activeCategory === cat ? CI.red : rule}`,
+              background: activeCategory === cat ? CI.red : 'transparent',
+              color: activeCategory === cat ? CI.chalk : mute,
+              fontFamily: '"Archivo Black", Impact, sans-serif',
+              fontSize: 11, fontWeight: 900, textTransform: 'uppercase', cursor: 'pointer',
+            }}
           >{CATEGORY_LABELS[cat] ?? cat}</button>
         ))}
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         {filtered.map(ex => (
           <button key={ex.id} onClick={() => onSelect(ex.id)} disabled={adding}
-            className="px-3.5 py-2.5 bg-slate-100 dark:bg-zinc-800 active:bg-vesta-red active:text-white rounded-xl text-sm text-slate-700 dark:text-slate-300 font-medium transition-colors disabled:opacity-40 select-none">
+            style={{
+              padding: '8px 12px',
+              background: dark ? CI.darkBg : CI.chalk,
+              border: `2px solid ${rule}`, borderRadius: 4,
+              color: ink, fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 500,
+              cursor: 'pointer', opacity: adding ? 0.4 : 1,
+            }}
+          >
             {ex.name}
           </button>
         ))}
@@ -54,9 +91,10 @@ function ExercisePicker({ exercises, onSelect, adding }) {
 
 export default function SessionEdit() {
   const { id } = useParams()
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const navigate = useNavigate()
   const { showToast } = useToast()
+  const dark = useIsDark()
 
   const [session, setSession] = useState(null)
   const [allExercises, setAllExercises] = useState([])
@@ -83,6 +121,27 @@ export default function SessionEdit() {
 
   const inputRefs = useRef({})
   const [pulsingSet, setPulsingSet] = useState({})
+
+  const bg   = dark ? CI.darkBg   : CI.chalk
+  const card = dark ? CI.darkCard : '#FFFDF5'
+  const ink  = dark ? CI.darkInk  : CI.ink
+  const mute = dark ? '#9A9387'   : CI.inkMute
+  const rule = dark ? CI.darkRule : CI.rule
+
+  const cardStyle = {
+    background: card, border: `2px solid ${ink}`,
+    borderRadius: 4, boxShadow: `3px 3px 0 ${ink}`,
+  }
+
+  const setInputStyle = (active) => ({
+    background: dark ? CI.darkBg : CI.chalk,
+    border: `2px solid ${active ? CI.red : rule}`,
+    borderRadius: 3, padding: '8px 10px',
+    textAlign: 'center',
+    fontFamily: '"Archivo Black", Impact, sans-serif',
+    fontSize: 18, fontWeight: 900, color: ink,
+    width: '100%', outline: 'none', boxSizing: 'border-box',
+  })
 
   const recalcTonnage = useCallback((savedSetsSnapshot, exMapSnapshot) => {
     let total = 0
@@ -309,12 +368,19 @@ export default function SessionEdit() {
     setTimeout(() => setNotesSaved(false), 2000)
   }
 
-  if (loading && !refreshing) return <div className="flex items-center justify-center min-h-screen"><Spinner size="lg" /></div>
+  if (loading && !refreshing) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: bg }}>
+      <Spinner size="lg" />
+    </div>
+  )
 
   if (error) return (
-    <div className="px-4 pt-16 text-center">
-      <p className="text-red-600 text-sm">{error}</p>
-      <button onClick={() => navigate(-1)} className="mt-4 text-vesta-red text-sm">Go back</button>
+    <div style={{ padding: '64px 20px', textAlign: 'center', background: bg, minHeight: '100vh' }}>
+      <p style={{ color: CI.red, fontFamily: 'Caveat, cursive', fontSize: 18 }}>{error}</p>
+      <button onClick={() => navigate(-1)} style={{
+        marginTop: 16, color: CI.red, fontFamily: 'Caveat, cursive', fontSize: 18,
+        background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline',
+      }}>Go back</button>
     </div>
   )
 
@@ -323,100 +389,170 @@ export default function SessionEdit() {
     : ''
   const completedSets = Object.values(savedSets).reduce((sum, sets) => sum + Object.values(sets).filter(Boolean).length, 0)
   const totalSets = Object.values(inputs).reduce((sum, seInputs) => sum + Object.keys(seInputs).length, 0)
+  const tonnageDisplay = totalTonnage >= 1000 ? `${(totalTonnage / 1000).toFixed(1)}t` : `${totalTonnage}kg`
+  const firstName = profile?.name?.trim().split(' ')[0] || ''
 
   return (
-    <div {...ptrHandlers} className="px-4 pt-6 pb-28">
+    <div {...ptrHandlers} style={{ background: bg, minHeight: '100vh', paddingBottom: 160, fontFamily: 'Inter, sans-serif' }}>
+
+      {/* Pull-to-refresh indicator */}
       {pullDistance > 0 && (
-        <div className="flex items-center justify-center overflow-hidden transition-all duration-150"
-          style={{ height: pullDistance, marginTop: -pullDistance, marginBottom: pullDistance }}>
-          <div className={`transition-all duration-150 ${isTriggered || refreshing ? 'text-vesta-red' : 'text-slate-300'}`}>
-            {refreshing ? <Spinner size="sm" /> : <RotateCcw size={18} className={isTriggered ? 'rotate-180' : ''} />}
+        <div style={{ height: pullDistance, marginTop: -pullDistance, marginBottom: pullDistance, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          <div style={{ color: isTriggered || refreshing ? CI.red : rule, transition: 'color 0.15s' }}>
+            {refreshing ? <Spinner size="sm" /> : <RotateCcw size={18} style={{ transform: isTriggered ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />}
           </div>
         </div>
       )}
 
-      <div className="flex items-center gap-3 mb-5">
-        <button onClick={() => navigate(-1)} className="text-slate-400 hover:text-slate-700 transition-colors">
+      {/* Header */}
+      <div style={{ padding: '52px 20px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <button onClick={() => navigate(-1)} style={{
+          color: mute, background: 'none', border: 'none', cursor: 'pointer',
+          marginTop: 4, flexShrink: 0,
+        }}>
           <ArrowLeft size={20} />
         </button>
         <div>
-          <p className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-medium">{sessionDate}</p>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-slate-50 leading-tight">Edit session</h1>
+          <div style={{ fontFamily: 'Caveat, cursive', fontSize: 16, color: mute, marginBottom: -2 }}>
+            {sessionDate}
+          </div>
+          <div style={{
+            fontFamily: '"Archivo Black", Impact, sans-serif',
+            fontSize: 36, fontWeight: 900, color: ink,
+            letterSpacing: -1, lineHeight: 0.9, textTransform: 'uppercase',
+          }}>
+            Edit session
+          </div>
         </div>
       </div>
 
+      {/* Scoreboard */}
       {exerciseOrder.length > 0 && (
-        <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl px-4 py-3 flex items-center justify-between mb-5 border border-slate-200 dark:border-zinc-800 shadow-sm">
-          <div className="text-center">
-            <div className="text-lg font-bold text-slate-900 dark:text-slate-50">{completedSets}<span className="text-slate-300 dark:text-zinc-600 text-sm font-normal">/{totalSets}</span></div>
-            <div className="text-xs text-slate-400 dark:text-slate-500">Sets</div>
-          </div>
-          <div className="h-8 w-px bg-slate-200 dark:bg-zinc-700" />
-          <div className="text-center">
-            <div className="text-lg font-bold text-vesta-red">{totalTonnage >= 1000 ? `${(totalTonnage / 1000).toFixed(1)}t` : `${totalTonnage}kg`}</div>
-            <div className="text-xs text-slate-400 dark:text-slate-500">Tonnage</div>
-          </div>
-          <div className="h-8 w-px bg-slate-200 dark:bg-zinc-700" />
-          <div className="text-center">
-            <div className="text-lg font-bold text-slate-900 dark:text-slate-50">{exerciseOrder.length}</div>
-            <div className="text-xs text-slate-400 dark:text-slate-500">Exercises</div>
+        <div style={{ padding: '0 20px 16px' }}>
+          <div style={{
+            ...cardStyle,
+            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', padding: '14px',
+          }}>
+            {[
+              { v: `${completedSets}/${totalSets}`, sub: 'sets done', hero: false },
+              { v: tonnageDisplay, sub: 'tonnage', hero: true },
+              { v: exerciseOrder.length, sub: 'exercises' },
+            ].map((s, i) => (
+              <div key={s.sub} style={{
+                textAlign: 'center', position: 'relative',
+                borderLeft: i > 0 ? `2px dashed ${rule}` : 'none',
+                padding: '0 4px',
+              }}>
+                <div style={{
+                  fontFamily: '"Archivo Black", Impact, sans-serif',
+                  fontSize: s.hero ? 38 : 30, fontWeight: 900,
+                  color: s.hero ? CI.red : ink, lineHeight: 1, letterSpacing: -1,
+                }}>{s.v}</div>
+                <div style={{ fontFamily: 'Caveat, cursive', fontSize: 13, color: mute, marginTop: 4 }}>{s.sub}</div>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
+      {/* Status banners */}
       {session && !session.completed_at && (
-        <div className="bg-vesta-navy/5 border border-vesta-navy/20 rounded-2xl px-4 py-3 mb-4">
-          <p className="text-xs text-slate-600">Session not yet marked complete — it won't show in History.</p>
+        <div style={{ padding: '0 20px 12px' }}>
+          <div style={{
+            background: `rgba(43,58,92,0.08)`,
+            border: `2px solid rgba(43,58,92,0.25)`,
+            borderRadius: 4, padding: '10px 14px',
+          }}>
+            <p style={{ fontFamily: 'Caveat, cursive', fontSize: 15, color: CI.navy }}>
+              Session not yet marked complete — it won't show in History.
+            </p>
+          </div>
         </div>
       )}
 
       {session && session.completed_at && (
-        <div className="bg-green-50 border border-green-200 rounded-2xl px-4 py-2.5 mb-4 flex items-center gap-2">
-          <CheckCircle2 size={14} className="text-green-500 flex-shrink-0" />
-          <p className="text-xs text-green-700 font-medium">
-            Completed {new Date(session.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-          </p>
+        <div style={{ padding: '0 20px 12px' }}>
+          <div style={{
+            background: 'rgba(34,197,94,0.08)',
+            border: '2px solid rgba(34,197,94,0.3)',
+            borderRadius: 4, padding: '10px 14px',
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <CheckCircle2 size={14} style={{ color: '#16a34a', flexShrink: 0 }} />
+            <p style={{ fontFamily: 'Caveat, cursive', fontSize: 15, color: '#15803d' }}>
+              Completed {new Date(session.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+            </p>
+          </div>
         </div>
       )}
 
-      <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm mb-4 overflow-hidden">
-        {!showPicker ? (
-          <button onClick={() => setShowPicker(true)}
-            className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-semibold text-vesta-red active:bg-slate-50 dark:active:bg-zinc-800 transition-colors">
-            <Plus size={16} /> Add exercise
-          </button>
-        ) : (
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Choose exercise</p>
-              <button onClick={() => setShowPicker(false)} className="text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300 p-1 -mr-1">
-                <X size={16} />
-              </button>
+      {/* Add exercise */}
+      <div style={{ padding: '0 20px 16px' }}>
+        <div style={cardStyle}>
+          {!showPicker ? (
+            <button
+              onClick={() => setShowPicker(true)}
+              style={{
+                width: '100%', padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                color: CI.red, background: 'none', border: 'none', cursor: 'pointer',
+                fontFamily: 'Caveat, cursive', fontSize: 18, fontWeight: 700,
+              }}
+            >
+              <Plus size={16} /> Add exercise
+            </button>
+          ) : (
+            <div style={{ padding: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <span style={{ fontFamily: '"Archivo Black", Impact, sans-serif', fontSize: 13, fontWeight: 900, color: mute, textTransform: 'uppercase', letterSpacing: 1 }}>Choose exercise</span>
+                <button onClick={() => setShowPicker(false)} style={{ color: mute, background: 'none', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+              </div>
+              <ExercisePicker exercises={allExercises} onSelect={addExercise} adding={addingExercise} dark={dark} />
             </div>
-            <ExercisePicker exercises={allExercises} onSelect={addExercise} adding={addingExercise} />
+          )}
+        </div>
+      </div>
+
+      {/* Session notes */}
+      <div style={{ padding: '0 20px 16px' }}>
+        <div style={cardStyle}>
+          <div style={{ padding: '14px' }}>
+            <p style={{ fontFamily: 'Caveat, cursive', fontSize: 15, color: mute, marginBottom: 8 }}>Session notes</p>
+            <textarea
+              value={notes}
+              onChange={e => { setNotes(e.target.value); setNotesDirty(true); setNotesSaved(false) }}
+              placeholder="How did the session feel? Any notes for your coach..."
+              rows={3}
+              style={{
+                width: '100%', background: dark ? CI.darkBg : CI.chalk,
+                border: `2px solid ${rule}`, borderRadius: 3,
+                padding: '10px 12px', color: ink, fontSize: 15,
+                fontFamily: 'Inter, sans-serif', resize: 'none', outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+            <button
+              onClick={saveNotes}
+              disabled={savingNotes || (!notesDirty && !notesSaved)}
+              style={{
+                marginTop: 8, width: '100%', padding: '10px',
+                background: notesSaved ? '#DCFCE7' : notesDirty ? CI.navy : (dark ? CI.darkBg : CI.chalkDeep),
+                color: notesSaved ? '#166534' : notesDirty ? CI.chalk : mute,
+                border: `2px solid ${notesDirty ? CI.navy : rule}`, borderRadius: 3,
+                fontFamily: '"Archivo Black", Impact, sans-serif',
+                fontSize: 12, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0.5,
+                cursor: notesDirty ? 'pointer' : 'default',
+                boxShadow: notesDirty ? `2px 2px 0 ${ink}` : 'none',
+                transition: 'all 0.2s',
+              }}
+            >
+              {savingNotes ? 'Saving…' : notesSaved ? 'Saved ✓' : 'Save notes'}
+            </button>
           </div>
-        )}
+        </div>
       </div>
 
-      <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 p-4 mb-4 shadow-sm">
-        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Session notes</p>
-        <textarea
-          value={notes}
-          onChange={e => { setNotes(e.target.value); setNotesDirty(true); setNotesSaved(false) }}
-          placeholder="How did the session feel? Any notes for your coach..."
-          rows={3}
-          className="w-full bg-slate-100 dark:bg-zinc-800 rounded-xl px-3 py-2.5 text-sm text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-vesta-red/40 resize-none transition-all"
-        />
-        <button
-          onClick={saveNotes}
-          disabled={savingNotes || (!notesDirty && !notesSaved)}
-          className={`mt-2 w-full py-2 rounded-xl text-xs font-semibold transition-all ${notesSaved ? 'bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-400' : notesDirty ? 'bg-vesta-navy text-white active:opacity-80' : 'bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500'}`}
-        >
-          {savingNotes ? 'Saving…' : notesSaved ? 'Saved ✓' : 'Save notes'}
-        </button>
-      </div>
-
-      <div className="space-y-3">
+      {/* Exercise cards */}
+      <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
         {[...exerciseOrder].reverse().map(seId => {
           const { exercise } = exerciseMap[seId] || {}
           if (!exercise) return null
@@ -424,82 +560,165 @@ export default function SessionEdit() {
           const setNums = getSetNums(seId)
           const isExpanded = expanded[seId] ?? true
           const isPR = prBadges[seId]
+          const doneSets = setNums.filter(n => !!savedSets[seId]?.[n]).length
+
           return (
-            <div key={seId} className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-sm">
-              <div className="px-4 pt-4 pb-3 flex items-center justify-between">
-                <button onClick={() => setExpanded(prev => ({ ...prev, [seId]: !prev[seId] }))}
-                  className="flex items-center gap-2 flex-1 text-left">
-                  <span className="text-base font-semibold text-slate-900 dark:text-slate-50">{exercise.name}</span>
-                  {isPR && <span className="flex items-center gap-1 bg-vesta-red text-white text-xs font-bold px-2 py-0.5 rounded-full"><Trophy size={10} /> PR</span>}
+            <div key={seId} style={{ ...cardStyle, overflow: 'hidden' }}>
+              {/* Exercise header */}
+              <div style={{
+                padding: '12px 14px 10px',
+                borderBottom: `2px dashed ${rule}`,
+                display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8,
+              }}>
+                <button
+                  onClick={() => setExpanded(prev => ({ ...prev, [seId]: !prev[seId] }))}
+                  style={{ display: 'flex', alignItems: 'baseline', gap: 8, flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
+                >
+                  <span style={{
+                    fontFamily: '"Archivo Black", Impact, sans-serif',
+                    fontSize: 19, fontWeight: 900, color: ink,
+                    letterSpacing: -0.5, textTransform: 'uppercase',
+                  }}>{exercise.name}</span>
+                  {isPR && (
+                    <span style={{
+                      background: CI.yellow, color: ink,
+                      border: `2px solid ${ink}`, borderRadius: 3,
+                      padding: '3px 8px', transform: 'rotate(3deg)', flexShrink: 0,
+                      fontFamily: '"Archivo Black", sans-serif', fontSize: 10, fontWeight: 900, letterSpacing: 1,
+                    }}>PR!</span>
+                  )}
                 </button>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <button onClick={() => setConfirmDeleteId(seId)} className="text-slate-300 hover:text-red-400 transition-colors p-1">
-                    <Trash2 size={15} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                  <span style={{ fontFamily: 'Caveat, cursive', fontSize: 15, color: mute }}>{doneSets}/{setNums.length} done</span>
+                  <button onClick={() => setConfirmDeleteId(seId)} style={{ color: rule, background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+                    <Trash2 size={14} />
                   </button>
-                  <div className="text-slate-400" onClick={() => setExpanded(prev => ({ ...prev, [seId]: !prev[seId] }))}>
-                    {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                  </div>
+                  <button onClick={() => setExpanded(prev => ({ ...prev, [seId]: !prev[seId] }))} style={{ color: mute, background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+                    {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
                 </div>
               </div>
+
+              {/* Set rows */}
               {isExpanded && (
-                <div className="px-4 pb-4 space-y-1">
-                  <div className={`grid gap-2 px-1 pb-1 ${inputType === 'bodyweight' ? 'grid-cols-[32px_1fr_44px_24px]' : 'grid-cols-[32px_1fr_1fr_44px_24px]'}`}>
-                    <span className="text-xs text-slate-400 text-center">#</span>
-                    {inputType === 'timed'      && <><span className="text-xs text-slate-400 text-center">reps</span><span className="text-xs text-slate-400 text-center">secs</span></>}
-                    {inputType === 'bodyweight' && <span className="text-xs text-slate-400 text-center">reps</span>}
-                    {inputType === 'weighted'   && <><span className="text-xs text-slate-400 text-center">kg</span><span className="text-xs text-slate-400 text-center">reps</span></>}
+                <div style={{ padding: '4px 14px 14px' }}>
+                  {/* Column headers */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: inputType === 'bodyweight'
+                      ? '28px 1fr 56px 24px'
+                      : '28px 1fr 1fr 56px 24px',
+                    gap: 8, padding: '6px 0 4px',
+                  }}>
+                    <span style={{ fontFamily: 'Caveat, cursive', fontSize: 12, color: mute, textAlign: 'center' }}>#</span>
+                    {inputType === 'timed'      && <><span style={{ fontFamily: 'Caveat, cursive', fontSize: 12, color: mute, textAlign: 'center' }}>reps</span><span style={{ fontFamily: 'Caveat, cursive', fontSize: 12, color: mute, textAlign: 'center' }}>secs</span></>}
+                    {inputType === 'bodyweight' && <span style={{ fontFamily: 'Caveat, cursive', fontSize: 12, color: mute, textAlign: 'center' }}>reps</span>}
+                    {inputType === 'weighted'   && <><span style={{ fontFamily: 'Caveat, cursive', fontSize: 12, color: mute, textAlign: 'center' }}>kg</span><span style={{ fontFamily: 'Caveat, cursive', fontSize: 12, color: mute, textAlign: 'center' }}>reps</span></>}
                     <span /><span />
                   </div>
+
                   {setNums.map(n => {
                     const isSaved = !!savedSets[seId]?.[n]
                     const isSaving = savingSet[`${seId}-${n}`]
                     const inp = inputs[seId]?.[n] || {}
-                    const inputClass = `bg-slate-100 dark:bg-zinc-800 rounded-lg px-2 py-2.5 text-sm text-center text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 transition-all w-full ${isSaved ? 'focus:ring-vesta-red/50 ring-1 ring-vesta-red/30' : 'focus:ring-slate-300 dark:focus:ring-zinc-600'}`
+                    const isActive = !isSaved && (inp.weight || inp.reps || inp.duration)
                     const canLog = inputType === 'weighted' ? (inp.weight && inp.reps) : inputType === 'timed' ? (inp.reps && inp.duration) : inp.reps
+                    const isPRSet = isSaved && prBadges[seId] && n === Math.max(...setNums.filter(nn => savedSets[seId]?.[nn]))
+
                     return (
                       <SwipeToDelete key={n} onDelete={() => deleteSet(seId, n)} disabled={isSaving} silent>
-                      <div className={`grid gap-2 items-center py-0.5 rounded-xl ${inputType === 'bodyweight' ? 'grid-cols-[32px_1fr_44px_24px]' : 'grid-cols-[32px_1fr_1fr_44px_24px]'} ${pulsingSet[`${seId}-${n}`] ? 'animate-log-pulse' : ''}`}>
-                        <span className="text-xs font-mono text-center">
-                          {isSaved ? <CheckCircle2 size={14} className="mx-auto text-vesta-red" /> : <span className="text-slate-400">{n}</span>}
-                        </span>
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: inputType === 'bodyweight'
+                            ? '28px 1fr 56px 24px'
+                            : '28px 1fr 1fr 56px 24px',
+                          gap: 8, alignItems: 'center', paddingBottom: 8,
+                          borderBottom: `1px dotted ${rule}`,
+                          background: isActive ? `rgba(244,196,48,0.08)` : 'transparent',
+                          transition: 'background 0.15s',
+                        }}>
+                          {/* Set number / done indicator */}
+                          <div style={{
+                            width: 24, height: 24, borderRadius: '50%',
+                            background: isSaved ? (isPRSet ? CI.yellow : CI.red) : 'transparent',
+                            border: isSaved ? `2px solid ${ink}` : `2px dashed ${rule}`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontFamily: '"Archivo Black", sans-serif', fontSize: 10, fontWeight: 900,
+                            color: isSaved ? (isPRSet ? ink : CI.chalk) : mute,
+                            flexShrink: 0,
+                          }}>
+                            {isSaved ? '✓' : n}
+                          </div>
 
-                        {inputType === 'weighted' && (
-                          <input type="text" inputMode="decimal" enterKeyHint="next"
-                            ref={el => { inputRefs.current[`${seId}-${n}-weight`] = el }}
-                            value={inp.weight ?? ''} onChange={e => updateInput(seId, n, 'weight', e.target.value)}
-                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); inputRefs.current[`${seId}-${n}-reps`]?.focus() } }}
-                            onBlur={() => { if (inp.weight && !inp.reps) inputRefs.current[`${seId}-${n}-reps`]?.focus() }}
-                            placeholder="kg" className={inputClass} />
-                        )}
+                          {inputType === 'weighted' && (
+                            <input type="text" inputMode="decimal" enterKeyHint="next"
+                              ref={el => { inputRefs.current[`${seId}-${n}-weight`] = el }}
+                              value={inp.weight ?? ''} onChange={e => updateInput(seId, n, 'weight', e.target.value)}
+                              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); inputRefs.current[`${seId}-${n}-reps`]?.focus() } }}
+                              onBlur={() => { if (inp.weight && !inp.reps) inputRefs.current[`${seId}-${n}-reps`]?.focus() }}
+                              placeholder="kg" style={setInputStyle(isActive)} />
+                          )}
 
-                        <input type="text" inputMode="numeric" enterKeyHint={inputType === 'weighted' ? 'next' : 'done'}
-                          ref={el => { inputRefs.current[`${seId}-${n}-reps`] = el }}
-                          value={inp.reps ?? ''} onChange={e => updateInput(seId, n, 'reps', e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); inputType === 'timed' ? inputRefs.current[`${seId}-${n}-duration`]?.focus() : logSet(seId, n) } }}
-                          placeholder="reps" className={inputClass} />
+                          <input type="text" inputMode="numeric" enterKeyHint={inputType === 'weighted' ? 'next' : 'done'}
+                            ref={el => { inputRefs.current[`${seId}-${n}-reps`] = el }}
+                            value={inp.reps ?? ''} onChange={e => updateInput(seId, n, 'reps', e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); inputType === 'timed' ? inputRefs.current[`${seId}-${n}-duration`]?.focus() : logSet(seId, n) } }}
+                            placeholder="reps" style={setInputStyle(isActive)} />
 
-                        {inputType === 'timed' && (
-                          <input type="text" inputMode="numeric" enterKeyHint="done"
-                            ref={el => { inputRefs.current[`${seId}-${n}-duration`] = el }}
-                            value={inp.duration ?? ''} onChange={e => updateInput(seId, n, 'duration', e.target.value)}
-                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); logSet(seId, n) } }}
-                            placeholder="secs" className={inputClass} />
-                        )}
+                          {inputType === 'timed' && (
+                            <input type="text" inputMode="numeric" enterKeyHint="done"
+                              ref={el => { inputRefs.current[`${seId}-${n}-duration`] = el }}
+                              value={inp.duration ?? ''} onChange={e => updateInput(seId, n, 'duration', e.target.value)}
+                              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); logSet(seId, n) } }}
+                              placeholder="secs" style={setInputStyle(isActive)} />
+                          )}
 
-                        <button onClick={() => logSet(seId, n)} disabled={isSaving || !canLog}
-                          className={`h-9 w-full rounded-lg text-xs font-semibold transition-all disabled:opacity-40 flex items-center justify-center ${isSaved ? 'bg-vesta-red/10 text-vesta-red hover:bg-vesta-red/20' : 'bg-vesta-red text-white hover:bg-vesta-red-dark'}`}>
-                          {isSaving ? <Spinner size="sm" /> : isSaved ? '✓' : 'Log'}
-                        </button>
-                        <button onClick={() => deleteSet(seId, n)} disabled={isSaving} className="flex items-center justify-center text-slate-300 hover:text-red-400 transition-colors disabled:opacity-40">
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
+                          {/* Log / done button */}
+                          <button
+                            onClick={() => logSet(seId, n)}
+                            disabled={isSaving || !canLog}
+                            style={{
+                              height: 36, width: '100%', borderRadius: 3, cursor: 'pointer',
+                              border: `2px solid ${ink}`,
+                              background: isSaved ? `rgba(209,58,46,0.1)` : CI.red,
+                              color: isSaved ? CI.red : CI.chalk,
+                              fontFamily: '"Archivo Black", Impact, sans-serif',
+                              fontSize: 11, fontWeight: 900,
+                              opacity: (!canLog && !isSaved) ? 0.4 : 1,
+                              boxShadow: (!isSaved && canLog) ? `2px 2px 0 ${ink}` : 'none',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              transition: 'all 0.15s',
+                            }}
+                          >
+                            {isSaving ? <Spinner size="sm" /> : isSaved ? '✓' : 'LOG'}
+                          </button>
+
+                          {/* Delete set */}
+                          <button
+                            onClick={() => deleteSet(seId, n)}
+                            disabled={isSaving}
+                            style={{ color: rule, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       </SwipeToDelete>
                     )
                   })}
-                  <button onClick={() => addSet(seId)}
-                    className="w-full py-2 rounded-xl text-xs text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300 border border-dashed border-slate-300 dark:border-zinc-700 hover:border-slate-400 dark:hover:border-zinc-600 transition-colors flex items-center justify-center gap-1 mt-2">
-                    <Plus size={12} /> Add set
+
+                  {/* Add set */}
+                  <button
+                    onClick={() => addSet(seId)}
+                    style={{
+                      width: '100%', padding: '10px',
+                      color: mute, background: 'none',
+                      border: `2px dashed ${rule}`, borderRadius: 3, cursor: 'pointer',
+                      fontFamily: 'Caveat, cursive', fontSize: 16,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                      marginTop: 8,
+                    }}
+                  >
+                    <Plus size={13} /> add another set
                   </button>
                 </div>
               )}
@@ -508,15 +727,32 @@ export default function SessionEdit() {
         })}
       </div>
 
+      {/* Finish session button */}
       {session && !session.completed_at && exerciseOrder.length > 0 && (
-        <button
-          onClick={markComplete}
-          disabled={finishing}
-          className="w-full mt-1 mb-2 bg-gradient-to-r from-vesta-red to-vesta-red-dark active:opacity-90 text-white font-bold py-4 rounded-2xl text-sm shadow-lg shadow-vesta-red/30 transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
-        >
-          {finishing ? <Spinner size="sm" /> : <CheckCircle2 size={16} />}
-          Finish session
-        </button>
+        <div style={{
+          position: 'fixed', bottom: 76, left: 0, right: 0,
+          padding: '0 20px', zIndex: 30, pointerEvents: 'none',
+        }}>
+          <button
+            onClick={markComplete}
+            disabled={finishing}
+            style={{
+              width: '100%', maxWidth: 480, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+              margin: '0 auto', padding: '16px',
+              background: CI.red, color: CI.chalk,
+              border: `2px solid ${ink}`, borderRadius: 4,
+              boxShadow: `4px 4px 0 ${ink}`,
+              fontFamily: '"Archivo Black", Impact, sans-serif',
+              fontSize: 18, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1,
+              cursor: 'pointer', opacity: finishing ? 0.6 : 1,
+              pointerEvents: 'auto',
+              transition: 'opacity 0.15s',
+            }}
+          >
+            {finishing ? <Spinner size="sm" /> : <CheckCircle2 size={18} />}
+            Finish session
+          </button>
+        </div>
       )}
 
       <Modal open={!!confirmDeleteId} onClose={() => setConfirmDeleteId(null)} title="Remove exercise?">
@@ -528,7 +764,8 @@ export default function SessionEdit() {
           <button onClick={() => deleteExercise(confirmDeleteId)} className="flex-1 py-3 rounded-xl text-sm font-bold bg-red-500 hover:bg-red-600 text-white transition-colors">Remove</button>
         </div>
       </Modal>
-      {showZoe && <ZoeCelebration onDismiss={() => setShowZoe(false)} />}
+
+      {showZoe && <ZoeCelebration onDismiss={() => setShowZoe(false)} name={firstName} />}
       {showCharlotte && <CharlotteCelebration onDismiss={() => setShowCharlotte(false)} />}
     </div>
   )

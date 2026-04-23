@@ -12,7 +12,7 @@ function fireGermanConfetti() {
   setTimeout(() => burst({ particleCount: 40, spread: 80, origin: { x: 0.7, y: 0.6 } }), 500)
 }
 
-export default function ZoeCelebration({ onDismiss }) {
+export default function ZoeCelebration({ onDismiss, name = 'Zoe' }) {
   useEffect(() => {
     fireGermanConfetti()
     if (navigator.vibrate) navigator.vibrate([50, 40, 50, 40, 50, 40, 200])
@@ -38,7 +38,7 @@ export default function ZoeCelebration({ onDismiss }) {
             WUNDERBAR!
           </h2>
           <p className="text-lg font-bold text-[#DD0000] mb-4 uppercase tracking-wide">
-            Ausgezeichnet, Zoe!
+            Ausgezeichnet, {name}!
           </p>
           <p className="text-slate-600 text-sm font-medium">
             Du bist <span className="font-black text-slate-900">unglaublich stark.</span>

@@ -1313,7 +1313,7 @@ export default function Home() {
         </div>
       </Modal>
 
-      {showZoe && <ZoeCelebration onDismiss={() => setShowZoe(false)} />}
+      {showZoe && <ZoeCelebration onDismiss={() => setShowZoe(false)} name={firstName} />}
       {showCharlotte && <CharlotteCelebration onDismiss={() => setShowCharlotte(false)} />}
 
       {/* Complete session button */}
